@@ -1,0 +1,26 @@
+{
+  "manifest_version":2,
+  "name":"Drück Mich",
+  "description": "Den URL des aktiven Tabs an den Server senden, dort verarbeiten und die Drück Mich Anwendung öffnen",
+  "version": "0.1",
+  "author": [{
+    "name":"Bernd Lorenzen",
+    "email":"Bernd.Lorenzen@stud.hs-flensburg.de"
+  }],
+  "permissions": ["activeTab", "tabs"],
+
+  "background": {
+    "scripts": ["background.js"]
+  },
+
+  "content_scripts": [{
+    "matches": [
+      "<all_urls>"
+    ],
+    "js": ["content.js"]
+  }],
+
+  "browser_action": {
+    "default_icon": "icon.png"
+  }
+}

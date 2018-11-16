@@ -14,7 +14,7 @@ var t = template.Must(template.ParseFiles(filepath.Join("./", "template", "head.
 	filepath.Join("./", "template", "end.html")))
 
 func main() {
-
+	fmt.Println(filepath.Join("./", "template", "login.html"))
 	http.HandleFunc("/drückMich", pressMeHandler)
 	http.HandleFunc("/Url", urlAjaxHandler)
 	http.ListenAndServe(":4242", nil)

@@ -1,0 +1,21 @@
+{{define "login"}}
+{{template "head"}}
+
+<div class="main">
+    <form method="post" action="drückMich">
+        <label>Benutzername:</label>
+        <input type="text" name="username" required>
+        <br>
+        <label>Passwort:</label>
+        <input type="password" name="password" required>
+        <br>
+        <input type="submit" value="login">
+    </form>
+    <form method="post" action="registrate">
+        <label>registrieren?</label>
+        <input type="submit" value="registrieren">
+    </form>
+</div>
+
+{{template "end"}}
+{{end}}

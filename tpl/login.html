@@ -2,7 +2,7 @@
 {{template "head"}}
 
 <div class="main">
-    <form method="post" action="drückMich">
+    <form method="post" action="drueckMich">
         <label>Benutzername:</label>
         <input type="text" name="username" required>
         <br>
@@ -15,6 +15,7 @@
         <label>registrieren?</label>
         <input type="submit" value="registrieren">
     </form>
+    <p>{{.ErrorMessage}}</p>
 </div>
 
 {{template "end"}}

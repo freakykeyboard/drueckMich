@@ -21,18 +21,23 @@ document.addEventListener('DOMContentLoaded',()=>{
            console.log(url);
            let xhr=new XMLHttpRequest();
            xhr.open('POST',url);
-
+           xhr.addEventListener("load",()=>{
+               //ToDo soll eine Fehlerbehandlung implemtiert wenn kein Cookie existiert
+              console.log(xhr.responseText)
+           });
            xhr.setRequestHeader("Content-type", 'application/x-www-form-urlencoded');
            xhr.send();
 
            // Neuen Tab mit urlNeuerTab öffnen. Falls diese Url bereits in einem Tab geöffnet ist,
            // diesen Tab aktivieren und neu laden:
-           let newTabUrl = "localhost:4242/drückMich";
+           var urlNeuerTab = "http://localhost:4242/drueckMich";
 
            chrome.tabs.query({
-               url: newTabUrl
+               url: urlNeuerTab
            }, function (tabs) {
+
                if (tabs[0]) {
+                   console.log('tabs[0]',tabs[0])
                    // es existiert ein Tab mit dieser urlNeuerTab:
                    // -> Tab aktivieren
                    // -> Tab neu laden
@@ -43,10 +48,11 @@ document.addEventListener('DOMContentLoaded',()=>{
                } else {
                    // neuen Tab mit urlNeuerTab öffnen:
                    chrome.tabs.create({
-                       url: newTabUrl
+                       url: urlNeuerTab
                    });
                }
            });
+
        }
    })
 });

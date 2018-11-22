@@ -9,6 +9,7 @@
 
 <table>
     <tr>
+
         <th>URL</th>
         <th>Kurzbeschreibung</th>
         <th>TitelText</th>
@@ -18,12 +19,13 @@
     </tr>
 {{range .Bookmarks}}
     <tr>
-        <td><a href={{.URL}}></a></td>
-        <td>{{.Info}}</td>
+
+        <td><a href={{.URL}}>{{.URL}}</a></td>
+        <td>{{.ShortReview}}</td>
         <td>{{.TitleText}}</td>
         <td>{{.Icon}}</td>
         <td>{{.Categories}}</td>
-        <td>{{.GPS}}</td>
+        <td>{{.Position}}</td>
     </tr>
 {{end}}
 </table>

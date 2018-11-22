@@ -44,6 +44,7 @@ type bookmarkTy struct {
 	URL         string       `bson:"url" json:"url"`
 	ShortReview string       `bson:"shortReview" json:"shortReview"`
 	TitleText   string       `bson:"titleText" json:"title_text"`
+	Icon        string       `bson:"icon" json:"icon"`
 	Categories  []categoryTy `bson:"categories" json:"categories"`
 	Position    string       `bson:"position" json:"position"`
 }
@@ -75,6 +76,7 @@ func main() {
 	http.ListenAndServe(":4242", nil)
 }
 func getAndProcessPage(pageUrl string) {
+	fmt.Println("getAndProcessPage")
 	var imgSrcs = make(map[int]string)
 	// Seite anfordern:
 
@@ -207,13 +209,16 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 	var bookmarks userBookmarks
 
 	var bookmark bookmarkTy
-	url := request.URL.Query().Get("url")
+	Url := request.URL.Query().Get("url")
 
 	oldCookie, _ := request.Cookie("pressMe")
 	docSelector := bson.M{"user_id": bson.ObjectIdHex(oldCookie.Value)}
-	bookmark.URL = url
+	bookmark.URL = Url
 
-	exits, _ := bookmarkCollection.Find(docSelector).Count()
+	exits, err := bookmarkCollection.Find(bson.M{"user_id": bson.ObjectIdHex(oldCookie.Value)}).Count()
+	if err != nil {
+		fmt.Println(err)
+	}
 	fmt.Println("exits: ", exits)
 	if exits == 1 {
 		bookmarkCollection.Find(docSelector).One(&bookmarks)
@@ -229,12 +234,15 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 		bookmarkCollection.Insert(bookmarks)
 	}
 
-	go getAndProcessPage(url)
+	go getAndProcessPage(Url)
 
 }
 func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 	//ToDo show Login only if no cookie available
-	var bookmarks userBookmarks
+	var docs []userBookmarks
+	var entries = bookmarksTy{
+		Bookmarks: []bookmarkTy{},
+	}
 
 	cookie, _ := request.Cookie("pressMe")
 
@@ -248,17 +256,23 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 		exits, _ := usersCollection.Find(bson.M{"username": userName, "password": password}).Count()
 		//user exists?
 		if exits == 1 {
-			usersCollection.Find(bson.M{"username": userName, "password": password}).All(&users)
+			err := usersCollection.Find(bson.M{"username": userName, "password": password}).All(&users)
+			if err != nil {
+				fmt.Println(err)
+			}
 			if users[0].IsLoggedIn == true {
 				var errMessage messageTy
 				errMessage.Message = "Benutzer schon angemeldet"
-				t.ExecuteTemplate(writer, "login", errMessage)
+				err = t.ExecuteTemplate(writer, "login", errMessage)
+				if err != nil {
+					fmt.Println(err)
+				}
 			} else {
 				docSelector := bson.M{"username": userName, "password": password}
 				docUpdate := bson.M{"$set": bson.M{"is_logged_in": true}}
 				err := usersCollection.Update(docSelector, docUpdate)
 				if err != nil {
-					fmt.Println(err)
+					log.Fatal(err)
 				}
 				Id = users[0].ID.Hex()
 
@@ -267,29 +281,33 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 					Value: Id,
 					Path:  "/",
 				}
-				fmt.Println(&setCookie)
+
 				http.SetCookie(writer, &setCookie)
 				//ToDo get bookmarks from DB
-				bookmarkCollection.Find(bson.M{"user_id": bson.ObjectIdHex(Id)}).One(&bookmarks)
-
-				var Bookmarks = bookmarksTy{
-
-					Bookmarks: []bookmarkTy{},
+				err = bookmarkCollection.Find(bson.M{"user_id": bson.ObjectIdHex(Id)}).All(&docs)
+				if err != nil {
+					log.Fatal(err)
 				}
 
-				for _, doc := range bookmarks.Bookmarks {
-					fmt.Println(doc)
-					item := bookmarkTy{
-						URL:         doc.URL,
-						ShortReview: doc.ShortReview,
-						TitleText:   doc.TitleText,
-						Categories:  doc.Categories,
-						Position:    doc.Position,
+				for _, doc := range docs {
+					for _, doc1 := range doc.Bookmarks {
+
+						item := bookmarkTy{
+							URL:         doc1.URL,
+							ShortReview: doc1.ShortReview,
+							TitleText:   doc1.TitleText,
+							Categories:  doc1.Categories,
+							Position:    doc1.Position,
+						}
+						entries.Bookmarks = append(entries.Bookmarks, item)
 					}
-					bookmarks.Bookmarks = append(Bookmarks.Bookmarks, item)
+
 				}
-				fmt.Println("bookmarks: ", Bookmarks.Bookmarks)
-				t.ExecuteTemplate(writer, "bookmarks", Bookmarks.Bookmarks)
+
+				err = t.ExecuteTemplate(writer, "bookmarks", entries)
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 
 		} else {

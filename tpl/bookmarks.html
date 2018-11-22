@@ -1,24 +1,26 @@
 {{define "bookmarks"}}
 {{template "head"}}
 <form method="post" action="deleteAccount">
-    <input type="submit" value="deleteUser"></input>
+    <input type="submit" value="deleteUser">
 </form>
 <form method="post" action="logout">
-    <input type="submit" value="logout"></input>
+    <input type="submit" value="logout">
 </form>
 
 <table>
     <tr>
         <th>URL</th>
         <th>Kurzbeschreibung</th>
+        <th>TitelText</th>
         <th>Icon/Logo</th>
         <th>Kategorien</th>
         <th>GPS</th>
     </tr>
-{{range .Entries}}
+{{range .Bookmarks}}
     <tr>
-        <td><a href={{.URL}}>{{.URL}}</a></td>
+        <td><a href={{.URL}}></a></td>
         <td>{{.Info}}</td>
+        <td>{{.TitleText}}</td>
         <td>{{.Icon}}</td>
         <td>{{.Categories}}</td>
         <td>{{.GPS}}</td>

@@ -51,6 +51,9 @@ type userBookmarks struct {
 	UserId    bson.ObjectId `json:"user_id" bson:"user_id"`
 	Bookmarks []bookmarkTy  `json:"bookmarks" bson:"bookmarks"`
 }
+type bookmarksTy struct {
+	Bookmarks []bookmarkTy
+}
 
 var usersCollection *mgo.Collection
 var bookmarkCollection *mgo.Collection
@@ -161,11 +164,11 @@ func logoutHandler(writer http.ResponseWriter, request *http.Request) {
 		fmt.Println(err)
 	}
 
-	newCookie := http.Cookie{
+	/*newCookie := http.Cookie{
 		Name:   cookieName,
 		MaxAge: -1,
 	}
-	http.SetCookie(writer, &newCookie)
+	http.SetCookie(writer, &newCookie)*/
 	t.ExecuteTemplate(writer, "login", nil)
 }
 
@@ -231,6 +234,8 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 }
 func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 	//ToDo show Login only if no cookie available
+	var bookmarks userBookmarks
+
 	cookie, _ := request.Cookie("pressMe")
 
 	if request.Method == "POST" {
@@ -265,7 +270,26 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 				fmt.Println(&setCookie)
 				http.SetCookie(writer, &setCookie)
 				//ToDo get bookmarks from DB
-				t.ExecuteTemplate(writer, "bookmarks", nil)
+				bookmarkCollection.Find(bson.M{"user_id": bson.ObjectIdHex(Id)}).One(&bookmarks)
+
+				var Bookmarks = bookmarksTy{
+
+					Bookmarks: []bookmarkTy{},
+				}
+
+				for _, doc := range bookmarks.Bookmarks {
+					fmt.Println(doc)
+					item := bookmarkTy{
+						URL:         doc.URL,
+						ShortReview: doc.ShortReview,
+						TitleText:   doc.TitleText,
+						Categories:  doc.Categories,
+						Position:    doc.Position,
+					}
+					bookmarks.Bookmarks = append(Bookmarks.Bookmarks, item)
+				}
+				fmt.Println("bookmarks: ", Bookmarks.Bookmarks)
+				t.ExecuteTemplate(writer, "bookmarks", Bookmarks.Bookmarks)
 			}
 
 		} else {

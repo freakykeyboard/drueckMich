@@ -45,6 +45,7 @@ type bookmarkTy struct {
 	ShortReview string       `bson:"shortReview" json:"shortReview"`
 	TitleText   string       `bson:"titleText" json:"title_text"`
 	Icon        string       `bson:"icon" json:"icon"`
+	Images      []string     `bson:"images" json:"images"`
 	Categories  []categoryTy `bson:"categories" json:"categories"`
 	Position    string       `bson:"position" json:"position"`
 }
@@ -58,6 +59,7 @@ type bookmarksTy struct {
 
 var usersCollection *mgo.Collection
 var bookmarkCollection *mgo.Collection
+var imgSrcs = make(map[int]string)
 
 func main() {
 	cookieName = "pressMe"
@@ -73,11 +75,16 @@ func main() {
 	http.HandleFunc("/registrate", registrateHandler)
 	http.HandleFunc("/logout", logoutHandler)
 	http.HandleFunc("/deleteAccount", deleteAccountHandler)
+	http.HandleFunc("/update", updateHandler)
 	http.ListenAndServe(":4242", nil)
+}
+
+func updateHandler(writer http.ResponseWriter, request *http.Request) {
+
 }
 func getAndProcessPage(pageUrl string) {
 	fmt.Println("getAndProcessPage")
-	var imgSrcs = make(map[int]string)
+
 	// Seite anfordern:
 
 	//	pageUrl := "http://localhost/webscraperTest.html"
@@ -98,14 +105,7 @@ func getAndProcessPage(pageUrl string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	suchAlleImgSrcAttributwerte(docZeiger)
-
-	// Ausgabe aller, vermutlich meistens relativen, SRC-URLs:
-	for _, wert := range imgSrcs {
-		fmt.Println(wert)
-	}
-
-	fmt.Println("---------------------------------------------------------------")
+	imgSrcs := suchAlleImgSrcAttributwerte(docZeiger)
 
 	// Alle relativen SRC-URLs in absolute URLs wandeln:
 	// https://golang.org/pkg/net/url/#example_URL_Parse
@@ -115,22 +115,21 @@ func getAndProcessPage(pageUrl string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(u)
-	fmt.Println("---------------------------------------------------------------")
 
 	// Nun alle URLs aus der Map im Kontext der pageUrl u in
 	// absolute URLS konvertieren:
+	fmt.Println(len(imgSrcs))
 	for _, wert := range imgSrcs {
 		absURL, err := u.Parse(wert)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(absURL)
+		fmt.Println("imgSrcUrl:", absURL)
+
 	}
 
 }
-func suchAlleImgSrcAttributwerte(node *html.Node) {
-	var imgSrcs = make(map[int]string)
+func suchAlleImgSrcAttributwerte(node *html.Node) map[int]string {
 	if node.Type == html.ElementNode && node.Data == "img" {
 		for _, img := range node.Attr {
 			if img.Key == "src" {
@@ -140,6 +139,7 @@ func suchAlleImgSrcAttributwerte(node *html.Node) {
 				} else {
 					imgSrcs[len(imgSrcs)] = img.Val
 				}
+
 				break
 			}
 		}
@@ -147,6 +147,8 @@ func suchAlleImgSrcAttributwerte(node *html.Node) {
 	for child := node.FirstChild; child != nil; child = child.NextSibling {
 		suchAlleImgSrcAttributwerte(child)
 	}
+
+	return imgSrcs
 }
 
 func deleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
@@ -239,10 +241,6 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 }
 func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 	//ToDo show Login only if no cookie available
-	var docs []userBookmarks
-	var entries = bookmarksTy{
-		Bookmarks: []bookmarkTy{},
-	}
 
 	cookie, _ := request.Cookie("pressMe")
 
@@ -284,27 +282,8 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 
 				http.SetCookie(writer, &setCookie)
 				//ToDo get bookmarks from DB
-				err = bookmarkCollection.Find(bson.M{"user_id": bson.ObjectIdHex(Id)}).All(&docs)
-				if err != nil {
-					log.Fatal(err)
-				}
 
-				for _, doc := range docs {
-					for _, doc1 := range doc.Bookmarks {
-
-						item := bookmarkTy{
-							URL:         doc1.URL,
-							ShortReview: doc1.ShortReview,
-							TitleText:   doc1.TitleText,
-							Categories:  doc1.Categories,
-							Position:    doc1.Position,
-						}
-						entries.Bookmarks = append(entries.Bookmarks, item)
-					}
-
-				}
-
-				err = t.ExecuteTemplate(writer, "bookmarks", entries)
+				err = t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries())
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -326,6 +305,32 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 
 	}
 
+}
+func getBookmarksEntries() bookmarksTy {
+	var entries = bookmarksTy{
+		Bookmarks: []bookmarkTy{},
+	}
+	var docs []userBookmarks
+	err := bookmarkCollection.Find(bson.M{"user_id": bson.ObjectIdHex(Id)}).All(&docs)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, doc := range docs {
+		for _, doc1 := range doc.Bookmarks {
+
+			item := bookmarkTy{
+				URL:         doc1.URL,
+				ShortReview: doc1.ShortReview,
+				TitleText:   doc1.TitleText,
+				Images:      doc1.Images,
+				Categories:  doc1.Categories,
+				Position:    doc1.Position,
+			}
+			entries.Bookmarks = append(entries.Bookmarks, item)
+		}
+
+	}
+	return entries
 }
 func analyzeUrl() {
 

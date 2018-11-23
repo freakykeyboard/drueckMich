@@ -13,6 +13,7 @@
         <th>URL</th>
         <th>Kurzbeschreibung</th>
         <th>TitelText</th>
+        <th>Images</th>
         <th>Icon/Logo</th>
         <th>Kategorien</th>
         <th>GPS</th>
@@ -23,12 +24,13 @@
         <td><a href={{.URL}}>{{.URL}}</a></td>
         <td>{{.ShortReview}}</td>
         <td>{{.TitleText}}</td>
+        <td><a href="{{.Images}}"></a></td>
         <td>{{.Icon}}</td>
         <td>{{.Categories}}</td>
         <td>{{.Position}}</td>
     </tr>
 {{end}}
 </table>
-
+<script src="bookmarks.js"></script>
 {{template "end"}}
 {{end}}

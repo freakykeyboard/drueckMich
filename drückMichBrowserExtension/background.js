@@ -1,4 +1,5 @@
 'use strict';
+//ToDo create a javascript cookie to identify the incoming url and send it to the server?
 //ToDo change " to '
 document.addEventListener('DOMContentLoaded',()=>{
    //browser action button handler

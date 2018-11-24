@@ -1,17 +1,21 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"golang.org/x/net/html"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 var Id string
@@ -21,15 +25,13 @@ var t = template.Must(template.ParseFiles(filepath.Join("./", "tpl", "head.html"
 	filepath.Join("./", "tpl", "end.html"), filepath.Join("./", "tpl", "registrate.html")))
 
 type userTy struct {
-	Username   string `bson:"username"`
-	Password   string `bson:"password"`
-	IsLoggedIn bool   `bson:"is_logged_in"`
+	Username string `bson:"username"`
+	Password string `bson:"password"`
 }
 type readUserTy struct {
-	ID         bson.ObjectId `bson:"_id"`
-	Username   string        `bson:"username"`
-	Password   string        `bson:"password"`
-	IsLoggedIn bool          `bson:"is_logged_in"`
+	ID       bson.ObjectId `bson:"_id"`
+	Username string        `bson:"username"`
+	Password string        `bson:"password"`
 }
 type usersTY struct {
 	Users []userTy
@@ -57,17 +59,36 @@ type bookmarksTy struct {
 	Bookmarks []bookmarkTy
 }
 
+var imgSrcs = make(map[int]string)
+
+type processUrlFinished struct {
+	Url []*url.URL
+}
+
 var usersCollection *mgo.Collection
 var bookmarkCollection *mgo.Collection
-var imgSrcs = make(map[int]string)
+var gridFs *mgo.GridFS
+var processedFinishedChannel = make(chan processUrlFinished)
 
 func main() {
 	cookieName = "pressMe"
-	dbSession, _ := mgo.Dial("localhost")
+	dialInfo := &mgo.DialInfo{
+		Addrs:    []string{"bernd.documents.azure.com:10255"}, // Get HOST + PORT
+		Timeout:  60 * time.Second,
+		Database: "bernd",                                                                                    // It can be anything
+		Username: "bernd",                                                                                    // Username
+		Password: "N3bwjITyGviFrY8oEBJTIZ9gF7U8y5oDj4cON33a5EZ0SrjRBIhpeqYanASoduVcGjp1S09eAZuuH5sZFDoOcQ==", // PASSWORD
+		DialServer: func(addr *mgo.ServerAddr) (net.Conn, error) {
+			return tls.Dial("tcp", addr.String(), &tls.Config{})
+		},
+	}
+	dbSession, _ := mgo.DialWithInfo(dialInfo)
 	defer dbSession.Close()
+	dbSession.SetSafe(&mgo.Safe{})
 	db := dbSession.DB("drückMich")
 	usersCollection = db.C("users")
 	bookmarkCollection = db.C("bookmarks")
+	gridFs = db.GridFS("favicons")
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 
 	http.HandleFunc("/drueckMich", pressMeHandler)
@@ -85,27 +106,29 @@ func updateHandler(writer http.ResponseWriter, request *http.Request) {
 func getAndProcessPage(pageUrl string) {
 	fmt.Println("getAndProcessPage")
 
-	// Seite anfordern:
-
-	//	pageUrl := "http://localhost/webscraperTest.html"
+	var processUrlFinished = processUrlFinished{}
 
 	// HTTP-GET Request senden:
 	res, err := http.Get(pageUrl)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	byteArrayPage, err := ioutil.ReadAll(res.Body)
 	res.Body.Close()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 
 	// Empfangene Seite parsen, in doc-tree wandeln:
 	docZeiger, err := html.Parse(strings.NewReader(string(byteArrayPage)))
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
-	imgSrcs := suchAlleImgSrcAttributwerte(docZeiger)
+	for _, node := range docZeiger.Data {
+		fmt.Println("data:", node)
+	}
+	//ToDo refactor sucheAlleImgAttributwerte such that the function get All the desired elements
+	imgSrcs := getAllAttributes(docZeiger)
 
 	// Alle relativen SRC-URLs in absolute URLs wandeln:
 	// https://golang.org/pkg/net/url/#example_URL_Parse
@@ -113,23 +136,30 @@ func getAndProcessPage(pageUrl string) {
 	// Zunächst die pageUrl (raw-url) in eine URL-structure wandeln:
 	u, err := url.Parse(pageUrl)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 
 	// Nun alle URLs aus der Map im Kontext der pageUrl u in
 	// absolute URLS konvertieren:
-	fmt.Println(len(imgSrcs))
+
 	for _, wert := range imgSrcs {
 		absURL, err := u.Parse(wert)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
-		fmt.Println("imgSrcUrl:", absURL)
+
+		//ToDo extract gps information from images
+
+		processUrlFinished.Url = append(processUrlFinished.Url, absURL)
 
 	}
 
+	processedFinishedChannel <- processUrlFinished
+
 }
-func suchAlleImgSrcAttributwerte(node *html.Node) map[int]string {
+
+func getAllAttributes(node *html.Node) map[int]string {
+
 	if node.Type == html.ElementNode && node.Data == "img" {
 		for _, img := range node.Attr {
 			if img.Key == "src" {
@@ -140,12 +170,11 @@ func suchAlleImgSrcAttributwerte(node *html.Node) map[int]string {
 					imgSrcs[len(imgSrcs)] = img.Val
 				}
 
-				break
 			}
 		}
 	}
 	for child := node.FirstChild; child != nil; child = child.NextSibling {
-		suchAlleImgSrcAttributwerte(child)
+		getAllAttributes(child)
 	}
 
 	return imgSrcs
@@ -161,6 +190,8 @@ func deleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
 }
 func logoutHandler(writer http.ResponseWriter, request *http.Request) {
 	oldCookie, _ := request.Cookie("pressMe")
+	fmt.Println("logout")
+	fmt.Println(oldCookie.Value)
 	docSelector := bson.M{"_id": bson.ObjectIdHex(oldCookie.Value)}
 	docUpdate := bson.M{"$set": bson.M{"is_logged_in": false}}
 	err := usersCollection.Update(docSelector, docUpdate)
@@ -168,11 +199,11 @@ func logoutHandler(writer http.ResponseWriter, request *http.Request) {
 		fmt.Println(err)
 	}
 
-	/*newCookie := http.Cookie{
+	newCookie := http.Cookie{
 		Name:   cookieName,
 		MaxAge: -1,
 	}
-	http.SetCookie(writer, &newCookie)*/
+	http.SetCookie(writer, &newCookie)
 	t.ExecuteTemplate(writer, "login", nil)
 }
 
@@ -192,7 +223,7 @@ func registrateHandler(writer http.ResponseWriter, request *http.Request) {
 		fmt.Println(len(users))
 		if userExists == 0 {
 
-			doc1 := userTy{userName, password, false}
+			doc1 := userTy{userName, password}
 			var errMessage messageTy
 			errMessage.Message = "Benutzer erstellt"
 			usersCollection.Insert(doc1)
@@ -209,8 +240,9 @@ func registrateHandler(writer http.ResponseWriter, request *http.Request) {
 }
 func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 	var bookmarks userBookmarks
-
+	var imgUrl = processUrlFinished{}
 	var bookmark bookmarkTy
+
 	Url := request.URL.Query().Get("url")
 
 	oldCookie, _ := request.Cookie("pressMe")
@@ -238,9 +270,55 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 
 	go getAndProcessPage(Url)
 
+	//title.Title
+	imgUrl = <-processedFinishedChannel
+	go getAndSaveFavicon(Url)
+
+	docSelector = bson.M{"user_id": bson.ObjectIdHex(oldCookie.Value), "bookmarks.url": Url}
+	bookmarkCollection.Find(docSelector).One(&bookmarks)
+	for _, item := range bookmarks.Bookmarks {
+		for _, img := range imgUrl.Url {
+			if item.URL == Url {
+				item.Images = append(item.Images, img.String())
+			}
+		}
+		bookmarks.Bookmarks = append(bookmarks.Bookmarks, item)
+	}
+
+	bookmarkCollection.Update(docSelector, bookmarks)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+}
+
+func getAndSaveFavicon(Url string) {
+	fmt.Println("getAndSaveFavicon")
+	faviconUrl := "https://www.google.com/s2/favicons?" + Url
+	fmt.Println("faviconUrl:", faviconUrl)
+	res, err := http.Get(faviconUrl)
+	if err != nil {
+		fmt.Println(err)
+	}
+	go getTitle()
+	gridFile, err := gridFs.Create("example")
+	if err != nil {
+		fmt.Println(err)
+	}
+	_, err = io.Copy(gridFile, res.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+	err = gridFile.Close()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
-	//ToDo show Login only if no cookie available
 
 	cookie, _ := request.Cookie("pressMe")
 
@@ -258,35 +336,23 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 			if err != nil {
 				fmt.Println(err)
 			}
-			if users[0].IsLoggedIn == true {
-				var errMessage messageTy
-				errMessage.Message = "Benutzer schon angemeldet"
-				err = t.ExecuteTemplate(writer, "login", errMessage)
-				if err != nil {
-					fmt.Println(err)
-				}
-			} else {
-				docSelector := bson.M{"username": userName, "password": password}
-				docUpdate := bson.M{"$set": bson.M{"is_logged_in": true}}
-				err := usersCollection.Update(docSelector, docUpdate)
-				if err != nil {
-					log.Fatal(err)
-				}
-				Id = users[0].ID.Hex()
 
-				setCookie := http.Cookie{
-					Name:  cookieName,
-					Value: Id,
-					Path:  "/",
-				}
+			if err != nil {
+				log.Fatal(err)
+			}
+			Id = users[0].ID.Hex()
 
-				http.SetCookie(writer, &setCookie)
-				//ToDo get bookmarks from DB
+			setCookie := http.Cookie{
+				Name:  cookieName,
+				Value: Id,
+				Path:  "/",
+			}
 
-				err = t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries())
-				if err != nil {
-					log.Fatal(err)
-				}
+			http.SetCookie(writer, &setCookie)
+
+			err = t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries())
+			if err != nil {
+				log.Fatal(err)
 			}
 
 		} else {
@@ -331,7 +397,4 @@ func getBookmarksEntries() bookmarksTy {
 
 	}
 	return entries
-}
-func analyzeUrl() {
-
 }

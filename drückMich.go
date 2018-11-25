@@ -33,23 +33,19 @@ type readUserTy struct {
 	Username string        `bson:"username"`
 	Password string        `bson:"password"`
 }
-type usersTY struct {
-	Users []userTy
-}
+
 type messageTy struct {
 	Message string
 }
-type categoryTy struct {
-	Name string `bson:"name" json:"name"`
-}
+
 type bookmarkTy struct {
-	URL         string       `bson:"url" json:"url"`
-	ShortReview string       `bson:"shortReview" json:"shortReview"`
-	TitleText   string       `bson:"titleText" json:"title_text"`
-	Icon        string       `bson:"icon" json:"icon"`
-	Images      []string     `bson:"images" json:"images"`
-	Categories  []categoryTy `bson:"categories" json:"categories"`
-	Position    string       `bson:"position" json:"position"`
+	URL         string   `bson:"url" json:"url"`
+	ShortReview string   `bson:"shortReview" json:"shortReview"`
+	TitleText   string   `bson:"titleText" json:"title_text"`
+	Images      []string `bson:"images" json:"images"`
+	IconName    string   `bson:"icon" json:"icon"`
+	Categories  []string `bson:"categories" json:"categories"`
+	Position    string   `bson:"position" json:"position"`
 }
 type userBookmarks struct {
 	UserId    bson.ObjectId `json:"user_id" bson:"user_id"`
@@ -58,19 +54,27 @@ type userBookmarks struct {
 type bookmarksTy struct {
 	Bookmarks []bookmarkTy
 }
+type processUrlFinished struct {
+	Url        []*url.URL
+	Attributes attributesTy
+}
+type attributesTy struct {
+	imgSrcs     map[int]string
+	title       string
+	description string
+	keywords    []string
+}
 
 var imgSrcs = make(map[int]string)
-
-type processUrlFinished struct {
-	Url []*url.URL
-}
+var attributes attributesTy
 
 var usersCollection *mgo.Collection
 var bookmarkCollection *mgo.Collection
-var gridFs *mgo.GridFS
+var favIconsGridFs *mgo.GridFS
 var processedFinishedChannel = make(chan processUrlFinished)
 
 func main() {
+	attributes.imgSrcs = make(map[int]string)
 	cookieName = "pressMe"
 	dialInfo := &mgo.DialInfo{
 		Addrs:    []string{"bernd.documents.azure.com:10255"}, // Get HOST + PORT
@@ -88,7 +92,7 @@ func main() {
 	db := dbSession.DB("drückMich")
 	usersCollection = db.C("users")
 	bookmarkCollection = db.C("bookmarks")
-	gridFs = db.GridFS("favicons")
+	favIconsGridFs = db.GridFS("favicons")
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 
 	http.HandleFunc("/drueckMich", pressMeHandler)
@@ -97,7 +101,35 @@ func main() {
 	http.HandleFunc("/logout", logoutHandler)
 	http.HandleFunc("/deleteAccount", deleteAccountHandler)
 	http.HandleFunc("/update", updateHandler)
+	http.HandleFunc("/gridGetIcon", getIconFromGrid)
 	http.ListenAndServe(":4242", nil)
+}
+func check_ResponseToHTTP(err error, writer http.ResponseWriter) {
+	if err != nil {
+		fmt.Fprintln(writer, err)
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+func getIconFromGrid(writer http.ResponseWriter, request *http.Request) {
+	iconName := request.URL.Query().Get("fileName")
+	fmt.Println("iconNamein GetRequest:", iconName)
+	if len(iconName) != 0 {
+		fmt.Println("iconName:", iconName)
+		img, err := favIconsGridFs.Open(iconName)
+		check(err)
+		writer.Header().Add("Content-Type", img.ContentType())
+		_, err = io.Copy(writer, img)
+		check_ResponseToHTTP(err, writer)
+		err = img.Close()
+		check_ResponseToHTTP(err, writer)
+	}
+
 }
 
 func updateHandler(writer http.ResponseWriter, request *http.Request) {
@@ -127,9 +159,12 @@ func getAndProcessPage(pageUrl string) {
 	for _, node := range docZeiger.Data {
 		fmt.Println("data:", node)
 	}
-	//ToDo refactor sucheAlleImgAttributwerte such that the function get All the desired elements
-	imgSrcs := getAllAttributes(docZeiger)
 
+	attributes = getAllAttributes(docZeiger)
+	processUrlFinished.Attributes = attributes
+	imgSrcs := attributes.imgSrcs
+	fmt.Println("getAndProcessPAge attributes.title:", attributes.title)
+	getAndSaveFavicon(pageUrl, attributes.title)
 	// Alle relativen SRC-URLs in absolute URLs wandeln:
 	// https://golang.org/pkg/net/url/#example_URL_Parse
 
@@ -158,26 +193,52 @@ func getAndProcessPage(pageUrl string) {
 
 }
 
-func getAllAttributes(node *html.Node) map[int]string {
+func getAllAttributes(node *html.Node) attributesTy {
+	if node.Type == html.ElementNode {
+		switch node.Data {
+		case "img":
 
-	if node.Type == html.ElementNode && node.Data == "img" {
-		for _, img := range node.Attr {
-			if img.Key == "src" {
-				// mit nächstem int-Index auf Map pushen:
-				if len(imgSrcs) == 0 {
-					imgSrcs[0] = img.Val
-				} else {
-					imgSrcs[len(imgSrcs)] = img.Val
+			for _, img := range node.Attr {
+				if img.Key == "src" {
+					// mit nächstem int-Index auf Map pushen:
+					if len(attributes.imgSrcs) == 0 {
+						attributes.imgSrcs[0] = img.Val
+					} else {
+						attributes.imgSrcs[len(attributes.imgSrcs)] = img.Val
+					}
 				}
+			}
+			break
+		case "title":
+			attributes.title = node.FirstChild.Data
+			break
+		case "meta":
 
+			for _, meta := range node.Attr {
+
+				switch meta.Val {
+
+				case "description":
+
+					attributes.description = node.Attr[1].Val
+					break
+
+				case "keywords":
+
+					keywords := strings.Split(node.Attr[1].Val, " ")
+					for _, keyword := range keywords {
+						attributes.keywords = append(attributes.keywords, keyword)
+					}
+				}
 			}
 		}
 	}
 	for child := node.FirstChild; child != nil; child = child.NextSibling {
+
 		getAllAttributes(child)
 	}
 
-	return imgSrcs
+	return attributes
 }
 
 func deleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
@@ -239,6 +300,7 @@ func registrateHandler(writer http.ResponseWriter, request *http.Request) {
 
 }
 func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
+	fmt.Println("urlAjaxHandler")
 	var bookmarks userBookmarks
 	var imgUrl = processUrlFinished{}
 	var bookmark bookmarkTy
@@ -246,8 +308,12 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 	Url := request.URL.Query().Get("url")
 
 	oldCookie, _ := request.Cookie("pressMe")
+	Id := oldCookie.Value
 	docSelector := bson.M{"user_id": bson.ObjectIdHex(oldCookie.Value)}
 	bookmark.URL = Url
+	go getAndProcessPage(Url)
+	//toDo find a better name
+	imgUrl = <-processedFinishedChannel
 
 	exits, err := bookmarkCollection.Find(bson.M{"user_id": bson.ObjectIdHex(oldCookie.Value)}).Count()
 	if err != nil {
@@ -255,68 +321,63 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 	fmt.Println("exits: ", exits)
 	if exits == 1 {
-		bookmarkCollection.Find(docSelector).One(&bookmarks)
-		bookmarks.Bookmarks = append(bookmarks.Bookmarks, bookmark)
+
+		bookmark.TitleText = imgUrl.Attributes.description
+		bookmark.Categories = imgUrl.Attributes.keywords
+		bookmark.IconName = imgUrl.Attributes.title
+
 		docUpdate := bson.M{"$addToSet": bson.M{"bookmarks": bookmark}}
-		err := bookmarkCollection.Update(docSelector, docUpdate)
+		err = bookmarkCollection.Update(docSelector, docUpdate)
 		if err != nil {
+			fmt.Println("updateCollectionError")
 			fmt.Println(err)
 		}
+
 	} else {
-		bookmarks.UserId = bson.ObjectIdHex(oldCookie.Value)
-		bookmarks.Bookmarks = append(bookmarks.Bookmarks, bookmark)
-		bookmarkCollection.Insert(bookmarks)
-	}
-
-	go getAndProcessPage(Url)
-
-	//title.Title
-	imgUrl = <-processedFinishedChannel
-	go getAndSaveFavicon(Url)
-
-	docSelector = bson.M{"user_id": bson.ObjectIdHex(oldCookie.Value), "bookmarks.url": Url}
-	bookmarkCollection.Find(docSelector).One(&bookmarks)
-	for _, item := range bookmarks.Bookmarks {
+		var item bookmarkTy
 		for _, img := range imgUrl.Url {
-			if item.URL == Url {
-				item.Images = append(item.Images, img.String())
-			}
+			item.Images = append(item.Images, img.String())
+
+			item.Categories = imgUrl.Attributes.keywords
+
 		}
+		item.URL = Url
+		item.IconName = imgUrl.Attributes.title
 		bookmarks.Bookmarks = append(bookmarks.Bookmarks, item)
+		bookmarks.UserId = bson.ObjectIdHex(Id)
+		fmt.Println(bookmarks)
+		err := bookmarkCollection.Insert(bookmarks)
+		check(err)
 	}
 
-	bookmarkCollection.Update(docSelector, bookmarks)
-
-	if err != nil {
-		fmt.Println(err.Error())
-	}
+	//docUpdate:=bson.M{"$set":{bookmark.URLitem}}
 
 }
 
-func getAndSaveFavicon(Url string) {
+func getAndSaveFavicon(Url string, title string) {
 	fmt.Println("getAndSaveFavicon")
-	faviconUrl := "https://www.google.com/s2/favicons?" + Url
+	faviconUrl := "https://www.google.com/s2/favicons?domain=" + Url
 	fmt.Println("faviconUrl:", faviconUrl)
+	fmt.Println("title:", title)
 	res, err := http.Get(faviconUrl)
 	if err != nil {
 		fmt.Println(err)
 	}
-	go getTitle()
-	gridFile, err := gridFs.Create("example")
+	parts := strings.Split(title, " ")
+	gridFile, err := favIconsGridFs.Create(parts[0])
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("error while creating:", err)
 	}
 	_, err = io.Copy(gridFile, res.Body)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("error whily copy", err)
 	}
 	err = gridFile.Close()
 	if err != nil {
-		log.Fatal(err)
-	}
-	if err != nil {
+		fmt.Println("error close")
 		fmt.Println(err)
 	}
+
 }
 func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 
@@ -383,11 +444,12 @@ func getBookmarksEntries() bookmarksTy {
 	}
 	for _, doc := range docs {
 		for _, doc1 := range doc.Bookmarks {
-
+			fmt.Println("iconName in GetEntries:", doc1.IconName)
 			item := bookmarkTy{
 				URL:         doc1.URL,
 				ShortReview: doc1.ShortReview,
 				TitleText:   doc1.TitleText,
+				IconName:    doc1.IconName,
 				Images:      doc1.Images,
 				Categories:  doc1.Categories,
 				Position:    doc1.Position,
@@ -396,5 +458,6 @@ func getBookmarksEntries() bookmarksTy {
 		}
 
 	}
+
 	return entries
 }

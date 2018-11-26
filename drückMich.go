@@ -40,14 +40,18 @@ type messageTy struct {
 }
 
 type bookmarkTy struct {
-	URL         string   `bson:"url" json:"url"`
-	ShortReview string   `bson:"shortReview" json:"shortReview"`
-	TitleText   string   `bson:"titleText" json:"title_text"`
-	Title       string   `bson:"title" json:"title"`
-	Images      []string `bson:"images" json:"images"`
-	IconName    string   `bson:"icon" json:"icon"`
-	Categories  []string `bson:"categories" json:"categories"`
-	Position    string   `bson:"position" json:"position"`
+	URL         string      `bson:"url" json:"url"`
+	ShortReview string      `bson:"shortReview" json:"shortReview"`
+	TitleText   string      `bson:"titleText" json:"title_text"`
+	Title       string      `bson:"title" json:"title"`
+	Images      []string    `bson:"images" json:"images"`
+	IconName    string      `bson:"icon" json:"icon"`
+	Categories  []string    `bson:"categories" json:"categories"`
+	Coordinates coordinates `bson:"position" json:"position"`
+}
+type coordinates struct {
+	Lat float64 `json:"lat" bson:"lat"`
+	Lon float64 `json:"lon" bson:"lon"`
 }
 type userBookmarks struct {
 	UserId    bson.ObjectId `json:"user_id" bson:"user_id"`
@@ -74,17 +78,20 @@ var usersCollection *mgo.Collection
 var bookmarkCollection *mgo.Collection
 var favIconsGridFs *mgo.GridFS
 var processedFinishedChannel = make(chan processUrlFinished)
+var coordinatesChannel = make(chan coordinates)
 var tempImageGridFs *mgo.GridFS
 
 func main() {
+	pw, _ := ioutil.ReadFile("pw.txt")
+
 	attributes.imgSrcs = make(map[int]string)
 	cookieName = "pressMe"
 	dialInfo := &mgo.DialInfo{
 		Addrs:    []string{"bernd.documents.azure.com:10255"}, // Get HOST + PORT
 		Timeout:  60 * time.Second,
-		Database: "bernd",                                                                                    // It can be anything
-		Username: "bernd",                                                                                    // Username
-		Password: "N3bwjITyGviFrY8oEBJTIZ9gF7U8y5oDj4cON33a5EZ0SrjRBIhpeqYanASoduVcGjp1S09eAZuuH5sZFDoOcQ==", // PASSWORD
+		Database: "bernd",    // It can be anything
+		Username: "bernd",    // Username
+		Password: string(pw), // PASSWORD
 		DialServer: func(addr *mgo.ServerAddr) (net.Conn, error) {
 			return tls.Dial("tcp", addr.String(), &tls.Config{})
 		},
@@ -137,7 +144,9 @@ func getIconFromGrid(writer http.ResponseWriter, request *http.Request) {
 }
 
 func updateHandler(writer http.ResponseWriter, request *http.Request) {
-
+	cookie, _ := request.Cookie("pressMe")
+	Id = cookie.Value
+	t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries())
 }
 func getAndProcessPage(pageUrl string) {
 	fmt.Println("getAndProcessPage")
@@ -318,6 +327,7 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 	attributes = attributesTy{}
 	attributes.imgSrcs = make(map[int]string)
 	go extractPosition(imgUrl.Url)
+	coordinates := <-coordinatesChannel
 	exits, err := bookmarkCollection.Find(bson.M{"user_id": bson.ObjectIdHex(oldCookie.Value)}).Count()
 	if err != nil {
 		fmt.Println(err)
@@ -329,6 +339,7 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 			fmt.Println("imgUrl:", img.String())
 
 		}
+		bookmark.Coordinates = coordinates
 		bookmark.ShortReview = imgUrl.Attributes.description
 		bookmark.Categories = imgUrl.Attributes.keywords
 		bookmark.IconName = imgUrl.Attributes.title
@@ -348,6 +359,7 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 			fmt.Println("imgUrl:", img.String())
 
 		}
+		item.Coordinates = coordinates
 		item.Categories = imgUrl.Attributes.keywords
 		item.URL = Url
 		item.IconName = imgUrl.Attributes.title
@@ -364,8 +376,9 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func extractPosition(urls []*url.URL) {
+	var coordinates = coordinates{}
 
-	for _, url := range urls {
+	for i, url := range urls {
 		res, err := http.Get(url.String())
 		check(err)
 		file, err := tempImageGridFs.Create("tmp")
@@ -379,18 +392,25 @@ func extractPosition(urls []*url.URL) {
 		x, err := exif.Decode(file)
 		if err != nil {
 			fmt.Println("Datei enthält keine exif-Daten, Programm wird beendet:")
+			if (len(urls) - 1) == i {
 
+				coordinatesChannel <- coordinates
+			}
 		} else {
+
 			latitude, longitude, _ := x.LatLong()
 			fmt.Println("Geografische Breite: ", latitude)
 			fmt.Println("Geografische Länge: ", longitude)
-
+			coordinates.Lat = latitude
+			coordinates.Lon = longitude
 			breite, _ := x.Get("ImageWidth")
 			hoehe, _ := x.Get("ImageLength")
 			fmt.Println("\nBreite des Bildes: ", breite)
 			fmt.Println("Höhe des Bildes: ", hoehe)
+			coordinatesChannel <- coordinates
+			return
 		}
-
+		tempImageGridFs.Remove("tmp")
 	}
 }
 
@@ -491,7 +511,7 @@ func getBookmarksEntries() bookmarksTy {
 				IconName:    doc1.IconName,
 				Images:      doc1.Images,
 				Categories:  doc1.Categories,
-				Position:    doc1.Position,
+				Coordinates: doc1.Coordinates,
 			}
 			entries.Bookmarks = append(entries.Bookmarks, item)
 		}

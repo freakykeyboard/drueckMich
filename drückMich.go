@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/rwcarlsen/goexif/exif"
 	"golang.org/x/net/html"
@@ -24,15 +23,17 @@ var t = template.Must(template.ParseFiles(filepath.Join("./", "tpl", "head.html"
 	filepath.Join("./", "tpl", "end.html"), filepath.Join("./", "tpl", "registrate.html")))
 
 type userTy struct {
-	Username  string       `bson:"username"`
-	Password  string       `bson:"password"`
-	Bookmarks []bookmarkTy `bson:"bookmarks"`
+	Username         string       `bson:"username"`
+	Password         string       `bson:"password"`
+	CustomCategories []string     `bson:"custom_categories" json:"custom_categories"`
+	Bookmarks        []bookmarkTy `bson:"bookmarks"`
 }
 type readUserTy struct {
-	ID        bson.ObjectId `bson:"_id"`
-	Username  string        `bson:"username"`
-	Password  string        `bson:"password"`
-	Bookmarks []bookmarkTy  `bson:"bookmarks" json:"bookmarks"`
+	ID               bson.ObjectId `bson:"_id"`
+	Username         string        `bson:"username"`
+	Password         string        `bson:"password"`
+	CustomCategories []string      `bson:"custom_categories" json:"custom_categories"`
+	Bookmarks        []bookmarkTy  `bson:"bookmarks"`
 }
 
 type messageTy struct {
@@ -134,12 +135,14 @@ func getIconFromGrid(writer http.ResponseWriter, request *http.Request) {
 func updateHandler(writer http.ResponseWriter, request *http.Request) {
 	cookie, _ := request.Cookie("pressMe")
 	Id = cookie.Value
-	bytestring, err := json.Marshal(getBookmarksEntries())
+	//ToDo send json instead of executing template
+	/*bytestring, err := json.Marshal(getBookmarksEntries())
 	if err != nil {
 		fmt.Println(err)
 	}
 	jsonString := string(bytestring)
-	fmt.Fprint(writer, jsonString)
+	fmt.Fprint(writer, jsonString)*/
+	t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries())
 }
 func getAndProcessPage(pageUrl string) {
 	fmt.Println("getAndProcessPage")
@@ -286,7 +289,7 @@ func registrateHandler(writer http.ResponseWriter, request *http.Request) {
 		fmt.Println(len(users))
 		if userExists == 0 {
 
-			doc1 := userTy{userName, password, []bookmarkTy{}}
+			doc1 := userTy{userName, password, nil, []bookmarkTy{}}
 			var errMessage messageTy
 			errMessage.Message = "Benutzer erstellt"
 			usersCollection.Insert(doc1)
@@ -311,47 +314,56 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 	Url := request.URL.Query().Get("url")
 
 	oldCookie, _ := request.Cookie("pressMe")
-	Id := oldCookie.Value
+
 	docSelector := bson.M{"_id": bson.ObjectIdHex(oldCookie.Value)}
 	err := usersCollection.Find(docSelector).One(&user)
 	check(err)
 	bookmark.URL = Url
-	docUpdate := bson.M{"$addToSet": bookmark}
+	docUpdate := bson.M{"$addToSet": bson.M{"bookmarks": bookmark}}
 	err = usersCollection.Update(docSelector, docUpdate)
 	check(err)
 	go getAndProcessPage(Url)
 	//toDo find a better name
 	imgUrl = <-processedFinishedChannel
 
+	err = usersCollection.Find(docSelector).One(&user)
+	check(err)
+	fmt.Println("user:")
+	fmt.Printf("%+v\n", user)
+	for _, img := range imgUrl.Url {
+		for i := range user.Bookmarks {
+			if user.Bookmarks[i].URL == Url {
+				user.Bookmarks[i].Images = append(user.Bookmarks[i].Images, img.String())
+				user.Bookmarks[i].Categories = imgUrl.Attributes.keywords
+				user.Bookmarks[i].URL = Url
+				user.Bookmarks[i].IconName = imgUrl.Attributes.title
+				user.Bookmarks[i].TitleText = imgUrl.Attributes.title
+				user.Bookmarks[i].Categories = imgUrl.Attributes.keywords
+				user.Bookmarks[i].ShortReview = imgUrl.Attributes.description
+			}
+
+		}
+	}
+	fmt.Println("user:")
+	fmt.Printf("%+v\n", user)
+	err = usersCollection.Update(docSelector, user)
+	check(err)
 	attributes = attributesTy{}
 	attributes.imgSrcs = make(map[int]string)
 	go extractPosition(imgUrl.Url)
 	coordinates := <-coordinatesChannel
+	err = usersCollection.Find(docSelector).One(&user)
+	check(err)
+	fmt.Println("user:")
+	fmt.Printf("%+v\n", user)
 
-	var item bookmarkTy
-	for _, img := range imgUrl.Url {
-		item.Images = append(item.Images, img.String())
-		fmt.Println("imgUrl:", img.String())
-
-		item.Coordinates = coordinates
-		item.Categories = imgUrl.Attributes.keywords
-		item.URL = Url
-		item.IconName = imgUrl.Attributes.title
-		item.TitleText = imgUrl.Attributes.title
-		item.Categories = imgUrl.Attributes.keywords
-		item.ShortReview = imgUrl.Attributes.description
-		err = usersCollection.Find(docSelector).One(&user)
-		check(err)
-		for _, bookmark := range user.Bookmarks {
-			bookmark.Coordinates = coordinates
-
+	for i := range user.Bookmarks {
+		if user.Bookmarks[i].URL == Url {
+			user.Bookmarks[i].Coordinates = coordinates
 		}
 
-		docUpdate := bson.M{"$addToSet": bson.M{"bookmarks": bookmark}}
-		err = usersCollection.Update(docSelector, docUpdate)
-		check(err)
 	}
-
+	err = usersCollection.Update(docSelector, user)
 }
 
 func extractPosition(urls []*url.URL) {
@@ -461,10 +473,9 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 		}
 	} else if request.Method == "GET" {
 		if cookie != nil {
-			t.ExecuteTemplate(writer, "bookmarks", nil)
+			Id = cookie.Value
+			t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries())
 		} else {
-			var message messageTy
-			message.Message = "gesendte Url konnte nicht zugeordnent werden. bitte voher anmelden"
 			t.ExecuteTemplate(writer, "login", nil)
 		}
 

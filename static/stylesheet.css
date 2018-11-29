@@ -1,6 +1,25 @@
 <!-- ToDo remove border from Divs-->
-* {
-    box-sizing: border-box;
+
+.center{
+    margin: auto;
+    width: 25%;
+
+    padding: 10px;
+}
+
+.Column
+{
+    float: right;
+    display: table-cell;
+
+}
+.row:after
+{
+    content: "";
+    display: table;
+    clear: both;
+
+
 }
 .header {
     border: 1px solid red;
@@ -9,7 +28,7 @@
 .main {
     width: 25%;
     float: left;
-    padding: 15px;
+
     border: 1px solid red;
 }
  h1 {
@@ -32,6 +51,25 @@ td, th {
     color:#4AA3FF;
 }
 
-tr:nth-child(even) {
+tr>th{
     background-color: #dddddd;
 }
+.item1 { grid-area: header; }
+.item2 { grid-area: menu; }
+.item3 { grid-area: main; }
+.item4 { grid-area: footer; }
+.grid-container {
+    display: grid;
+    grid-template-areas:
+            'header header header header header header'
+            'menu menu menu menu menu menu'
+            'main main main main main main'
+            'footer footer footer footer footer footer';
+
+}
+.grid-container > div {
+
+    text-align: center;
+    font-size: 30px;
+}
+

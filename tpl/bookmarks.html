@@ -1,37 +1,50 @@
 {{define "bookmarks"}}
-{{template "head"}}
-<form method="post" action="deleteAccount">
-    <input type="submit" value="deleteUser">
-</form>
-<form method="post" action="logout">
-    <input type="submit" value="logout">
-</form>
-<div id="tableDiv">
-<table>
-    <tr>
+    {{template "head"}}
+    <div class="item2">
 
-        <th>URL</th>
-        <th>Kurzbeschreibung</th>
-        <th>TitelText</th>
-        <th>Images</th>
-        <th>Icon/Logo</th>
-        <th>Kategorien</th>
-        <th>GPS</th>
-    </tr>
-{{range .Bookmarks}}
-    <tr>
+        <div class="Column">
+            <input type="button" value="deleteUser">
+        </div>
+        <div class="Column">
+            <input type="button" value="logout">
+        </div>
+        <div class="Column">
+            <input type="button" value="neue Kategorie">
+        </div>
+        <div class="Column">
+           <select>
+            <option>Kategorien</option>
+               <option></option>
+           </select>
+        </div>
+    </div>
+    <div id="tableDiv" class="item3">
+        <table>
+            <tr>
 
-        <td><a href={{.URL}}>{{.URL}}</a></td>
-        <td>{{.ShortReview}}</td>
-        <td>{{.TitleText}}</td>
-        <td><a href="{{.Images}}"></a></td>
-        <td><img src="/gridGetIcon?fileName="{{.IconName}}></td>
-        <td>{{.Categories}}</td>
-        <td>{{.Coordinates}}</td>
-    </tr>
-{{end}}
-</table>
-</div>
-<script src="bookmarks.js"></script>
-{{template "end"}}
+                <th>URL</th>
+                <th>Kurzbeschreibung</th>
+                <th>TitelText</th>
+                <th>Images</th>
+                <th>Icon/Logo</th>
+                <th>Kategorien</th>
+                <th>GPS</th>
+            </tr>
+            {{range .Bookmarks}}
+                <tr>
+
+                    <td><a href={{.URL}} target="_blank">{{.URL}}</a></td>
+                    <td>{{.ShortReview}}</td>
+                    <td>{{.TitleText}}</td>
+                    <td><a href="{{.Images}}"></a></td>
+                    <td><img src="/gridGetIcon?fileName="{{.IconName}}></td>
+                    <td>{{.Categories}}</td>
+                    <td>{{.Coordinates}}</td>
+                </tr>
+            {{end}}
+        </table>
+    </div>
+
+    <script src="bookmarks.js"></script>
+    {{template "end"}}
 {{end}}

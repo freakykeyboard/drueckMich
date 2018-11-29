@@ -144,7 +144,7 @@ func updateHandler(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprint(writer, jsonString)*/
 	t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries())
 }
-func getAndProcessPage(pageUrl string) {
+func getAndProcessPage(pageUrl string, docSelector bson.M) {
 	fmt.Println("getAndProcessPage")
 
 	var processUrlFinished = processUrlFinished{}
@@ -322,9 +322,11 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 	docUpdate := bson.M{"$addToSet": bson.M{"bookmarks": bookmark}}
 	err = usersCollection.Update(docSelector, docUpdate)
 	check(err)
-	go getAndProcessPage(Url)
+	go getAndProcessPage(Url, docSelector)
 	//toDo find a better name
 	imgUrl = <-processedFinishedChannel
+	attributes = attributesTy{}
+	attributes.imgSrcs = make(map[int]string)
 
 	err = usersCollection.Find(docSelector).One(&user)
 	check(err)
@@ -348,8 +350,6 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 	fmt.Printf("%+v\n", user)
 	err = usersCollection.Update(docSelector, user)
 	check(err)
-	attributes = attributesTy{}
-	attributes.imgSrcs = make(map[int]string)
 	go extractPosition(imgUrl.Url)
 	coordinates := <-coordinatesChannel
 	err = usersCollection.Find(docSelector).One(&user)

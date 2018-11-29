@@ -27,6 +27,7 @@
                 <th>TitelText</th>
                 <th>Images</th>
                 <th>Icon/Logo</th>
+                <th>WVR-Kategorien</th>
                 <th>Kategorien</th>
                 <th>GPS</th>
             </tr>
@@ -38,7 +39,8 @@
                     <td>{{.TitleText}}</td>
                     <td><a href="{{.Images}}"></a></td>
                     <td><img src="/gridGetIcon?fileName="{{.IconName}}></td>
-                    <td>{{.Categories}}</td>
+                    <td>{{.WVRCategories}}</td>
+                    <td>{{.CustomCategories}}</td>
                     <td>{{.Coordinates}}</td>
                 </tr>
             {{end}}

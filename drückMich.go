@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/rwcarlsen/goexif/exif"
+	"github.com/watson-developer-cloud/go-sdk/core"
+	"github.com/watson-developer-cloud/go-sdk/visualrecognitionv3"
 	"golang.org/x/net/html"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -12,6 +14,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -41,23 +44,21 @@ type messageTy struct {
 }
 
 type bookmarkTy struct {
-	URL         string      `bson:"url" json:"url"`
-	ShortReview string      `bson:"shortReview" json:"shortReview"`
-	TitleText   string      `bson:"titleText" json:"title_text"`
-	Title       string      `bson:"title" json:"title"`
-	Images      []string    `bson:"images" json:"images"`
-	IconName    string      `bson:"icon" json:"icon"`
-	Categories  []string    `bson:"categories" json:"categories"`
-	Coordinates coordinates `bson:"position" json:"position"`
+	URL              string      `bson:"url" json:"url"`
+	ShortReview      string      `bson:"shortReview" json:"shortReview"`
+	TitleText        string      `bson:"titleText" json:"title_text"`
+	Title            string      `bson:"title" json:"title"`
+	Images           []string    `bson:"images" json:"images"`
+	IconName         string      `bson:"icon" json:"icon"`
+	WVRCategories    []string    `bson:"wvrcategories" json:"wvr_categories"`
+	CustomCategories []string    `bson:"customcategories" json:"custom_categories"`
+	Coordinates      coordinates `bson:"position" json:"position"`
 }
 type coordinates struct {
 	Lat float64 `json:"lat" bson:"lat"`
 	Lon float64 `json:"lon" bson:"lon"`
 }
-type userBookmarks struct {
-	UserId    bson.ObjectId `json:"user_id" bson:"user_id"`
-	Bookmarks []bookmarkTy  `json:"bookmarks" bson:"bookmarks"`
-}
+
 type bookmarksTy struct {
 	Bookmarks []bookmarkTy `json:"bookmarks"`
 }
@@ -71,20 +72,40 @@ type attributesTy struct {
 	description string
 	keywords    []string
 }
+type channelData struct {
+	Url         string
+	Docselector bson.M
+}
+type categories struct {
+	Categories []string
+}
 
-var imgSrcs = make(map[int]string)
 var attributes attributesTy
 
 var usersCollection *mgo.Collection
 var favIconsGridFs *mgo.GridFS
-var processedFinishedChannel = make(chan processUrlFinished)
-var coordinatesChannel = make(chan coordinates)
+
 var tempImageGridFs *mgo.GridFS
+var coordinatesChannel = make(chan coordinates, 2)
+var dataChannel = make(chan channelData, 2)
+var categoriesChannel = make(chan categories)
+var service *visualrecognitionv3.VisualRecognitionV3
+var serviceErr error
 
 func main() {
+	byteArray, _ := ioutil.ReadFile("apiKey")
+	apiKey := string(byteArray)
 	attributes.imgSrcs = make(map[int]string)
 	cookieName = "pressMe"
-
+	service, serviceErr = visualrecognitionv3.
+		NewVisualRecognitionV3(&visualrecognitionv3.VisualRecognitionV3Options{
+			URL:       "https://gateway.watsonplatform.net/visual-recognition/api",
+			Version:   "2018-03-19",
+			IAMApiKey: apiKey,
+		})
+	if serviceErr != nil {
+		panic(serviceErr)
+	}
 	dbSession, _ := mgo.Dial("localhost")
 	defer dbSession.Close()
 	dbSession.SetSafe(&mgo.Safe{})
@@ -135,6 +156,7 @@ func getIconFromGrid(writer http.ResponseWriter, request *http.Request) {
 
 func updateHandler(writer http.ResponseWriter, request *http.Request) {
 	cookie, _ := request.Cookie("pressMe")
+
 	Id = cookie.Value
 	//ToDo send json instead of executing template
 	/*bytestring, err := json.Marshal(getBookmarksEntries())
@@ -145,10 +167,13 @@ func updateHandler(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprint(writer, jsonString)*/
 	t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries())
 }
-func getAndProcessPage(pageUrl string) {
+func getAndProcessPage() {
+	channelData := <-dataChannel
+	docSelector := channelData.Docselector
+	pageUrl := channelData.Url
 	fmt.Println("getAndProcessPage")
-
-	var processUrlFinished = processUrlFinished{}
+	var user readUserTy
+	var imgUrls []*url.URL
 
 	// HTTP-GET Request senden:
 	res, err := http.Get(pageUrl)
@@ -166,11 +191,11 @@ func getAndProcessPage(pageUrl string) {
 	if err != nil {
 		fmt.Println(err)
 	}
-
+	attributes = attributesTy{}
+	attributes.imgSrcs = make(map[int]string)
 	attributes = getAllAttributes(docZeiger)
-	processUrlFinished.Attributes = attributes
 
-	getAndSaveFavicon(pageUrl, attributes.title)
+	go getAndSaveFavicon(pageUrl, attributes.title)
 	// Alle relativen SRC-URLs in absolute URLs wandeln:
 	// https://golang.org/pkg/net/url/#example_URL_Parse
 
@@ -189,13 +214,50 @@ func getAndProcessPage(pageUrl string) {
 			fmt.Println(err)
 		}
 
-		//ToDo extract gps information from images
+		imgUrls = append(imgUrls, absURL)
 
-		processUrlFinished.Url = append(processUrlFinished.Url, absURL)
+		err = usersCollection.Find(docSelector).One(&user)
+		check(err)
+
+		for i := range user.Bookmarks {
+			if user.Bookmarks[i].URL == pageUrl {
+				user.Bookmarks[i].Images = append(user.Bookmarks[i].Images, absURL.String())
+				user.Bookmarks[i].CustomCategories = attributes.keywords
+				user.Bookmarks[i].IconName = attributes.title
+				user.Bookmarks[i].TitleText = attributes.title
+				user.Bookmarks[i].ShortReview = attributes.description
+			}
+
+		}
 
 	}
 
-	processedFinishedChannel <- processUrlFinished
+	err = usersCollection.Update(docSelector, user)
+	check(err)
+	go extractPosition(imgUrls)
+
+	coordinates := <-coordinatesChannel
+	err = usersCollection.Find(docSelector).One(&user)
+	check(err)
+
+	for i := range user.Bookmarks {
+		if user.Bookmarks[i].URL == pageUrl {
+			user.Bookmarks[i].Coordinates = coordinates
+		}
+	}
+	err = usersCollection.Update(docSelector, user)
+	go classesRecoginition(imgUrls)
+	categories := <-categoriesChannel
+	err = usersCollection.Find(docSelector).One(&user)
+	check(err)
+	for i := range user.Bookmarks {
+		if user.Bookmarks[i].URL == pageUrl {
+			for _, category := range categories.Categories {
+				user.Bookmarks[i].WVRCategories = append(user.Bookmarks[i].WVRCategories, category)
+			}
+
+		}
+	}
 
 }
 
@@ -257,8 +319,7 @@ func deleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
 }
 func logoutHandler(writer http.ResponseWriter, request *http.Request) {
 	oldCookie, _ := request.Cookie("pressMe")
-	fmt.Println("logout")
-	fmt.Println(oldCookie.Value)
+
 	docSelector := bson.M{"_id": bson.ObjectIdHex(oldCookie.Value)}
 	docUpdate := bson.M{"$set": bson.M{"is_logged_in": false}}
 	err := usersCollection.Update(docSelector, docUpdate)
@@ -284,10 +345,8 @@ func registrateHandler(writer http.ResponseWriter, request *http.Request) {
 		userName := request.PostFormValue("username")
 		password := request.PostFormValue("password")
 
-		var users []readUserTy
 		userExists, _ := usersCollection.Find(bson.M{"username": userName}).Count()
 
-		fmt.Println(len(users))
 		if userExists == 0 {
 
 			doc1 := userTy{userName, password, nil, []bookmarkTy{}}
@@ -305,85 +364,57 @@ func registrateHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 }
-func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
+func urlAjaxHandler(_ http.ResponseWriter, request *http.Request) {
+	//ToDo check if entry alread exists
 	fmt.Println("urlAjaxHandler")
 	var user readUserTy
-
-	var imgUrl = processUrlFinished{}
 	var bookmark bookmarkTy
 
 	Url := request.URL.Query().Get("url")
-
 	oldCookie, _ := request.Cookie("pressMe")
-
 	docSelector := bson.M{"_id": bson.ObjectIdHex(oldCookie.Value)}
+	var channelData = channelData{
+		Url:         Url,
+		Docselector: docSelector,
+	}
+	go getAndProcessPage()
+	dataChannel <- channelData
 	err := usersCollection.Find(docSelector).One(&user)
 	check(err)
 	bookmark.URL = Url
 	docUpdate := bson.M{"$addToSet": bson.M{"bookmarks": bookmark}}
 	err = usersCollection.Update(docSelector, docUpdate)
 	check(err)
-	go getAndProcessPage(Url)
+
 	//toDo find a better name
-	imgUrl = <-processedFinishedChannel
-	attributes = attributesTy{}
-	attributes.imgSrcs = make(map[int]string)
-
-	err = usersCollection.Find(docSelector).One(&user)
-	check(err)
-	fmt.Println("user:")
-	fmt.Printf("%+v\n", user)
-	for _, img := range imgUrl.Url {
-		for i := range user.Bookmarks {
-			if user.Bookmarks[i].URL == Url {
-				user.Bookmarks[i].Images = append(user.Bookmarks[i].Images, img.String())
-				user.Bookmarks[i].Categories = imgUrl.Attributes.keywords
-				user.Bookmarks[i].URL = Url
-				user.Bookmarks[i].IconName = imgUrl.Attributes.title
-				user.Bookmarks[i].TitleText = imgUrl.Attributes.title
-				user.Bookmarks[i].Categories = imgUrl.Attributes.keywords
-				user.Bookmarks[i].ShortReview = imgUrl.Attributes.description
-			}
-
-		}
-	}
-	fmt.Println("user:")
-	fmt.Printf("%+v\n", user)
-	err = usersCollection.Update(docSelector, user)
-	check(err)
-	go extractPositionandCategories(imgUrl.Url)
-	coordinates := <-coordinatesChannel
-	err = usersCollection.Find(docSelector).One(&user)
-	check(err)
-	fmt.Println("user:")
-	fmt.Printf("%+v\n", user)
-
-	for i := range user.Bookmarks {
-		if user.Bookmarks[i].URL == Url {
-			user.Bookmarks[i].Coordinates = coordinates
-		}
-	}
-	err = usersCollection.Update(docSelector, user)
 
 }
 
-func extractPositionandCategories(urls []*url.URL) {
+func extractPosition(urls []*url.URL) {
+	fmt.Println("extractPositions")
 	var coordinates = coordinates{}
 
 	for i, url := range urls {
 		res, err := http.Get(url.String())
 		check(err)
+		fmt.Println("res:", res)
 		file, err := tempImageGridFs.Create("tmp")
 		_, err = io.Copy(file, res.Body)
 		check(err)
 		err = file.Close()
+		result := struct{ INode int }{}
+		err = file.GetMeta(&result)
+		if err != nil {
+			panic(err)
+		}
+
 		check(err)
 		file, err = tempImageGridFs.Open("tmp")
 		check(err)
 
 		x, err := exif.Decode(file)
 		if err != nil {
-			fmt.Println("Datei enthält keine exif-Daten, Programm wird beendet:")
+
 			if (len(urls) - 1) == i {
 
 				coordinatesChannel <- coordinates
@@ -391,14 +422,10 @@ func extractPositionandCategories(urls []*url.URL) {
 		} else {
 
 			latitude, longitude, _ := x.LatLong()
-			fmt.Println("Geografische Breite: ", latitude)
-			fmt.Println("Geografische Länge: ", longitude)
+
 			coordinates.Lat = latitude
 			coordinates.Lon = longitude
-			breite, _ := x.Get("ImageWidth")
-			hoehe, _ := x.Get("ImageLength")
-			fmt.Println("\nBreite des Bildes: ", breite)
-			fmt.Println("Höhe des Bildes: ", hoehe)
+
 			coordinatesChannel <- coordinates
 			return
 		}
@@ -418,6 +445,7 @@ func getAndSaveFavicon(Url string, title string) {
 	if err != nil {
 		fmt.Println("error while creating:", err)
 	}
+
 	_, err = io.Copy(gridFile, res.Body)
 
 	if err != nil {
@@ -493,4 +521,49 @@ func getBookmarksEntries() bookmarksTy {
 	}
 
 	return bookmarksTy{Bookmarks: doc.Bookmarks}
+}
+func classesRecoginition(urls []*url.URL) {
+	for _, url := range urls {
+		// Optionen für die Klassifizierung festlegen:
+		classifyOptions := service.NewClassifyOptions()
+		classifyOptions.URL = core.StringPtr(url.String())
+
+		// Schwellwert für den "Verlässlichkeitsscore":
+		classifyOptions.Threshold = core.Float32Ptr(0.6)
+
+		classifyOptions.ClassifierIds = []string{"default"}
+		//	classifyOptions.ClassifierIds = []string{"default", "food", "explicit"}
+
+		// Ausgabesprache definieren:
+		sprache := new(string)
+		*sprache = "de"
+		classifyOptions.AcceptLanguage = sprache
+
+		// Classify Dienst aufrufen:
+		response, responseErr := service.Classify(classifyOptions)
+		if responseErr != nil {
+			panic(responseErr)
+		}
+
+		// Ergebnisdaten aufbereiten:
+		classifyResult := service.GetClassifyResult(response)
+
+		if classifyResult != nil {
+			core.PrettyPrint(classifyResult, "------------------Empfangene Daten (JSON) mit PrettyPrint ausgegeben")
+
+			// Einzelne Datenelemente aus dem Ergebnis extrahieren:
+			classes := classifyResult.Images[0].Classifiers[0].Classes
+			imageName := *classifyResult.Images[0].ResolvedURL
+			_, imageName = path.Split(imageName) // path.Split NICHT string.Split !!!!!
+			//typHierarchie := *classes[0].TypeHierarchy
+
+			//fmt.Printf("\n------------------Das Image %s wurde in die Typ-Hierarchie %s eingeordnet.\n", imageName, typHierarchie)
+			fmt.Println("Die ermittelten Kategorien und Scores lauten:")
+			for _, wert := range classes {
+				fmt.Printf("%s, %f\n", *wert.ClassName, *wert.Score)
+			}
+		}
+		return
+	}
+
 }

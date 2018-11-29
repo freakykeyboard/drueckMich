@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="d918e52f-f33d-4ebc-8016-4159b07f9a6a" name="Default Changelist" comment="&quot;testing os dependcy&quot;">
+    <list default="true" id="d918e52f-f33d-4ebc-8016-4159b07f9a6a" name="Default Changelist" comment="started with watson api">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/drückMich" beforeDir="false" afterPath="$PROJECT_DIR$/drückMich" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/drückMich.go" beforeDir="false" afterPath="$PROJECT_DIR$/drückMich.go" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/.idea/httpRequests/" />
@@ -68,8 +67,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/drückMich.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="215">
-              <caret line="325" column="29" selection-start-line="325" selection-start-column="29" selection-end-line="325" selection-end-column="29" />
+            <state relative-caret-position="243">
+              <caret line="95" column="4" selection-start-line="95" selection-start-column="4" selection-end-line="95" selection-end-column="4" />
             </state>
           </provider>
         </entry>
@@ -114,6 +113,8 @@
       <find>getAndProcessPage</find>
       <find>getAll</find>
       <find>getA</find>
+      <find>getAndP</find>
+      <find>ex</find>
     </findStrings>
     <replaceStrings>
       <replace />
@@ -183,7 +184,7 @@
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="go.gopath.indexing.explicitly.defined" value="true" />
     <property name="go.sdk.automatically.set" value="true" />
-    <property name="last_opened_file_path" value="$USER_HOME$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="list.type.of.created.stylesheet" value="CSS" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
@@ -334,28 +335,30 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-1" y="0" width="1922" height="1053" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.13891892" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32936078" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.32839224" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.32839224" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.39935064" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32936078" />
       <window_info anchor="bottom" id="Version Control" order="7" weight="0.32900432" />
       <window_info anchor="bottom" id="Database Changes" order="8" show_stripe_button="false" />
-      <window_info anchor="bottom" id="Terminal" order="9" weight="0.267316" />
+      <window_info anchor="bottom" id="Terminal" order="9" weight="0.2668187" />
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
       <window_info anchor="bottom" id="Statistic" order="11" weight="0.32900432" />
       <window_info anchor="bottom" id="REST Client" order="12" weight="0.32936078" />
       <window_info anchor="bottom" id="Docker" order="13" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Messages" order="14" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="right" id="Mongo Explorer" order="3" weight="0.23783784" />
+      <window_info anchor="right" id="Mongo Explorer" order="3" visible="true" weight="0.24216217" />
       <window_info anchor="right" id="Database" order="4" weight="0.32942432" />
       <window_info anchor="right" id="Api Debugger" order="5" />
       <window_info anchor="right" id="Tracking Log Stats" order="6" weight="0.21375267" />
@@ -426,20 +429,17 @@
     <MESSAGE value="parse Templates" />
     <MESSAGE value="&quot;testing os dependcy&quot;" />
     <MESSAGE value="&quot;removed non umlaute&quot;" />
-    <option name="LAST_COMMIT_MESSAGE" value="&quot;removed non umlaute&quot;" />
+    <MESSAGE value="refactor goroutines start" />
+    <MESSAGE value="started with watson api" />
+    <option name="LAST_COMMIT_MESSAGE" value="started with watson api" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/drückMich.go</url>
-          <line>308</line>
+          <line>278</line>
           <option name="timeStamp" value="1" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
-          <url>file://$PROJECT_DIR$/drückMich.go</url>
-          <line>326</line>
-          <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
@@ -486,6 +486,13 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/../gopkg.in/go-playground/validator.v9/baked_in.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="72">
+          <caret line="4" column="4" selection-start-line="4" selection-start-column="4" selection-end-line="4" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/static/bookmarks.js">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="72">
@@ -523,8 +530,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/drückMich.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="215">
-          <caret line="325" column="29" selection-start-line="325" selection-start-column="29" selection-end-line="325" selection-end-column="29" />
+        <state relative-caret-position="243">
+          <caret line="95" column="4" selection-start-line="95" selection-start-column="4" selection-end-line="95" selection-end-column="4" />
         </state>
       </provider>
     </entry>

@@ -93,6 +93,7 @@ func main() {
 
 	favIconsGridFs = db.GridFS("favicons")
 	tempImageGridFs = db.GridFS("temp")
+
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 
 	http.HandleFunc("/drueckMich", pressMeHandler)
@@ -144,7 +145,7 @@ func updateHandler(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprint(writer, jsonString)*/
 	t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries())
 }
-func getAndProcessPage(pageUrl string, docSelector bson.M) {
+func getAndProcessPage(pageUrl string) {
 	fmt.Println("getAndProcessPage")
 
 	var processUrlFinished = processUrlFinished{}
@@ -322,7 +323,7 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 	docUpdate := bson.M{"$addToSet": bson.M{"bookmarks": bookmark}}
 	err = usersCollection.Update(docSelector, docUpdate)
 	check(err)
-	go getAndProcessPage(Url, docSelector)
+	go getAndProcessPage(Url)
 	//toDo find a better name
 	imgUrl = <-processedFinishedChannel
 	attributes = attributesTy{}
@@ -350,7 +351,7 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 	fmt.Printf("%+v\n", user)
 	err = usersCollection.Update(docSelector, user)
 	check(err)
-	go extractPosition(imgUrl.Url)
+	go extractPositionandCategories(imgUrl.Url)
 	coordinates := <-coordinatesChannel
 	err = usersCollection.Find(docSelector).One(&user)
 	check(err)
@@ -361,12 +362,12 @@ func urlAjaxHandler(writer http.ResponseWriter, request *http.Request) {
 		if user.Bookmarks[i].URL == Url {
 			user.Bookmarks[i].Coordinates = coordinates
 		}
-
 	}
 	err = usersCollection.Update(docSelector, user)
+
 }
 
-func extractPosition(urls []*url.URL) {
+func extractPositionandCategories(urls []*url.URL) {
 	var coordinates = coordinates{}
 
 	for i, url := range urls {

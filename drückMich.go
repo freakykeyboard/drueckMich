@@ -97,12 +97,11 @@ func main() {
 	apiKey := string(byteArray)
 	attributes.imgSrcs = make(map[int]string)
 	cookieName = "pressMe"
-	service, serviceErr = visualrecognitionv3.
-		NewVisualRecognitionV3(&visualrecognitionv3.VisualRecognitionV3Options{
-			URL:       "https://gateway.watsonplatform.net/visual-recognition/api",
-			Version:   "2018-03-19",
-			IAMApiKey: apiKey,
-		})
+	service, serviceErr = visualrecognitionv3.NewVisualRecognitionV3(&visualrecognitionv3.VisualRecognitionV3Options{
+		URL:       "https://gateway.watsonplatform.net/visual-recognition/api",
+		Version:   "2018-03-19",
+		IAMApiKey: apiKey,
+	})
 	if serviceErr != nil {
 		panic(serviceErr)
 	}
@@ -248,16 +247,19 @@ func getAndProcessPage() {
 	err = usersCollection.Update(docSelector, user)
 	go classesRecoginition(imgUrls)
 	categories := <-categoriesChannel
+	fmt.Println("kategorien diemüber den channel gesendet wurden", categories)
 	err = usersCollection.Find(docSelector).One(&user)
 	check(err)
 	for i := range user.Bookmarks {
 		if user.Bookmarks[i].URL == pageUrl {
+			fmt.Println("eintrag gfunden")
 			for _, category := range categories.Categories {
 				user.Bookmarks[i].WVRCategories = append(user.Bookmarks[i].WVRCategories, category)
 			}
 
 		}
 	}
+	err = usersCollection.Update(docSelector, user)
 
 }
 
@@ -523,6 +525,7 @@ func getBookmarksEntries() bookmarksTy {
 	return bookmarksTy{Bookmarks: doc.Bookmarks}
 }
 func classesRecoginition(urls []*url.URL) {
+	var categories = categories{}
 	for _, url := range urls {
 		// Optionen für die Klassifizierung festlegen:
 		classifyOptions := service.NewClassifyOptions()
@@ -549,7 +552,6 @@ func classesRecoginition(urls []*url.URL) {
 		classifyResult := service.GetClassifyResult(response)
 
 		if classifyResult != nil {
-			core.PrettyPrint(classifyResult, "------------------Empfangene Daten (JSON) mit PrettyPrint ausgegeben")
 
 			// Einzelne Datenelemente aus dem Ergebnis extrahieren:
 			classes := classifyResult.Images[0].Classifiers[0].Classes
@@ -561,8 +563,10 @@ func classesRecoginition(urls []*url.URL) {
 			fmt.Println("Die ermittelten Kategorien und Scores lauten:")
 			for _, wert := range classes {
 				fmt.Printf("%s, %f\n", *wert.ClassName, *wert.Score)
+				categories.Categories = append(categories.Categories, *wert.ClassName)
 			}
 		}
+		categoriesChannel <- categories
 		return
 	}
 

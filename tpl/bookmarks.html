@@ -25,11 +25,13 @@
                 <th>URL</th>
                 <th>Kurzbeschreibung</th>
                 <th>TitelText</th>
+                <th>Title</th>
                 <th>Images</th>
                 <th>Icon/Logo</th>
                 <th>WVR-Kategorien</th>
                 <th>Kategorien</th>
-                <th>GPS</th>
+                <th>Latitude</th>
+
             </tr>
             {{range .Bookmarks}}
                 <tr>
@@ -37,11 +39,13 @@
                     <td><a href={{.URL}} target="_blank">{{.URL}}</a></td>
                     <td>{{.ShortReview}}</td>
                     <td>{{.TitleText}}</td>
-                    <td><a href="{{.Images}}"></a></td>
-                    <td><img src="/gridGetIcon?fileName="{{.IconName}}></td>
+                   <td>{{.Title}}</td>
+                    <td>{{.Images}}</td>
+                    <td><img src="localhost:4242/gridGetIcon/?fileName={{.IconName}}"></td>
                     <td>{{.WVRCategories}}</td>
                     <td>{{.CustomCategories}}</td>
-                    <td>{{.Coordinates}}</td>
+                    <td><P>Latitude</P>{{.Lat}},<p>Longitude</p>{{.Long}}</td>
+
                 </tr>
             {{end}}
         </table>

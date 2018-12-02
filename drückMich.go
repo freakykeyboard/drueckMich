@@ -44,15 +44,16 @@ type messageTy struct {
 }
 
 type bookmarkTy struct {
-	URL              string      `bson:"url" json:"url"`
-	ShortReview      string      `bson:"shortReview" json:"shortReview"`
-	TitleText        string      `bson:"titleText" json:"title_text"`
-	Title            string      `bson:"title" json:"title"`
-	Images           []string    `bson:"images" json:"images"`
-	IconName         string      `bson:"icon" json:"icon"`
-	WVRCategories    []string    `bson:"wvrcategories" json:"wvr_categories"`
-	CustomCategories []string    `bson:"customcategories" json:"custom_categories"`
-	Coordinates      coordinates `bson:"position" json:"position"`
+	URL              string   `bson:"url" json:"url"`
+	ShortReview      string   `bson:"shortReview" json:"shortReview"`
+	TitleText        string   `bson:"titleText" json:"title_text"`
+	Title            string   `bson:"title" json:"title"`
+	Images           []string `bson:"images" json:"images"`
+	IconName         string   `bson:"icon" json:"icon"`
+	WVRCategories    []string `bson:"wvrcategories" json:"wvr_categories"`
+	CustomCategories []string `bson:"customcategories" json:"custom_categories"`
+	Lat              float64  `bson:"lat" json:"lat"`
+	Long             float64  `bson:"long" json:"long"`
 }
 type coordinates struct {
 	Lat float64 `json:"lat" bson:"lat"`
@@ -122,7 +123,7 @@ func main() {
 	http.HandleFunc("/logout", logoutHandler)
 	http.HandleFunc("/deleteAccount", deleteAccountHandler)
 	http.HandleFunc("/update", updateHandler)
-	http.HandleFunc("/gridGetIcon", getIconFromGrid)
+	http.HandleFunc("/gridGetIcon/", getIconFromGrid)
 	http.ListenAndServe(":4242", nil)
 }
 func check_ResponseToHTTP(err error, writer http.ResponseWriter) {
@@ -139,15 +140,17 @@ func check(err error) {
 }
 func getIconFromGrid(writer http.ResponseWriter, request *http.Request) {
 	iconName := request.URL.Query().Get("fileName")
-	fmt.Println("iconNamein GetRequest:", iconName)
+	fmt.Println("iconName", iconName)
 	if len(iconName) != 0 {
 		fmt.Println("iconName:", iconName)
 		img, err := favIconsGridFs.Open(iconName)
 		check(err)
-		writer.Header().Add("Content-Type", img.ContentType())
+		fmt.Println(img.ContentType())
+		writer.Header().Add("Content-Type", "image/jpg")
 		_, err = io.Copy(writer, img)
 		check_ResponseToHTTP(err, writer)
 		err = img.Close()
+		fmt.Println("img.ContenType", img.ContentType())
 		check_ResponseToHTTP(err, writer)
 	}
 
@@ -241,7 +244,8 @@ func getAndProcessPage() {
 
 	for i := range user.Bookmarks {
 		if user.Bookmarks[i].URL == pageUrl {
-			user.Bookmarks[i].Coordinates = coordinates
+			user.Bookmarks[i].Lat = coordinates.Lat
+			user.Bookmarks[i].Long = coordinates.Lon
 		}
 	}
 	err = usersCollection.Update(docSelector, user)
@@ -442,7 +446,7 @@ func getAndSaveFavicon(Url string, title string) {
 	if err != nil {
 		fmt.Println(err)
 	}
-
+	fmt.Println("title", title)
 	gridFile, err := favIconsGridFs.Create(title)
 	if err != nil {
 		fmt.Println("error while creating:", err)
@@ -545,7 +549,7 @@ func classesRecoginition(urls []*url.URL) {
 		// Classify Dienst aufrufen:
 		response, responseErr := service.Classify(classifyOptions)
 		if responseErr != nil {
-			panic(responseErr)
+			log.Println(responseErr)
 		}
 
 		// Ergebnisdaten aufbereiten:

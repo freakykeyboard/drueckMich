@@ -1,5 +1,6 @@
 {{define "bookmarks"}}
     {{template "head"}}
+
     <div class="item2">
 
         <div class="Column">
@@ -9,48 +10,58 @@
             <input type="button" value="logout">
         </div>
         <div class="Column">
-            <input type="button" value="neue Kategorie">
+            <button value="neue Kategorie" id="newCategory">neue Kategorie</button>
         </div>
         <div class="Column">
            <select>
             <option>Kategorien</option>
-               <option></option>
+               <script>console.log({{.}})</script>
+               {{range .AvailableCategories}}
+               <option>{{.}}</option>
+               {{end}}
            </select>
         </div>
     </div>
-    <div id="tableDiv" class="item3">
-        <table>
+    <div class="item3">
+        <table id="bookmarkTable">
+            <thead>
             <tr>
-
                 <th>URL</th>
                 <th>Kurzbeschreibung</th>
-                <th>TitelText</th>
-                <th>Title</th>
+                <th>
+                    <div class="tooltip" onclick="titleClick(event)">Title
+                        <span class="tooltiptext">Zum Sortieren klicken</span>
+                    </div>
+                </th>
                 <th>Images</th>
                 <th>Icon/Logo</th>
                 <th>WVR-Kategorien</th>
                 <th>Kategorien</th>
                 <th>Latitude</th>
-
             </tr>
+            </thead>
+            <tbody>
             {{range .Bookmarks}}
                 <tr>
 
                     <td><a href={{.URL}} target="_blank">{{.URL}}</a></td>
                     <td>{{.ShortReview}}</td>
-                    <td>{{.TitleText}}</td>
                    <td>{{.Title}}</td>
                     <td>{{.Images}}</td>
-                    <td><img src="localhost:4242/gridGetIcon/?fileName={{.IconName}}"></td>
+                    <td><img src="/gridGetIcon?fileName={{.IconName}}"></td>
                     <td>{{.WVRCategories}}</td>
                     <td>{{.CustomCategories}}</td>
                     <td><P>Latitude</P>{{.Lat}},<p>Longitude</p>{{.Long}}</td>
 
                 </tr>
             {{end}}
+            </tbody>
         </table>
     </div>
 
     <script src="bookmarks.js"></script>
+
+    {{template "modal"}}
+    <script src="modal.js"></script>
     {{template "end"}}
 {{end}}

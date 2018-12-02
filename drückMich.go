@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/rwcarlsen/goexif/exif"
 	"github.com/watson-developer-cloud/go-sdk/core"
@@ -16,27 +17,27 @@ import (
 	"net/url"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
-var Id string
-var cookieName string
 var t = template.Must(template.ParseFiles(filepath.Join("./", "tpl", "head.html"),
 	filepath.Join("./", "tpl", "login.html"), filepath.Join("./", "tpl", "bookmarks.html"),
-	filepath.Join("./", "tpl", "end.html"), filepath.Join("./", "tpl", "registrate.html")))
+	filepath.Join("./", "tpl", "end.html"), filepath.Join("./", "tpl", "registrate.html"),
+	filepath.Join("./", "tpl", "modal.html")))
 
 type userTy struct {
-	Username         string       `bson:"username"`
-	Password         string       `bson:"password"`
-	CustomCategories []string     `bson:"custom_categories" json:"custom_categories"`
-	Bookmarks        []bookmarkTy `bson:"bookmarks"`
+	Username            string       `bson:"username"`
+	Password            string       `bson:"password"`
+	AvailableCategories []CategoryTy `bson:"available_categories" json:"available_categories"`
+	Bookmarks           []bookmarkTy `bson:"bookmarks" json:"bookmarks"`
 }
 type readUserTy struct {
-	ID               bson.ObjectId `bson:"_id"`
-	Username         string        `bson:"username"`
-	Password         string        `bson:"password"`
-	CustomCategories []string      `bson:"custom_categories" json:"custom_categories"`
-	Bookmarks        []bookmarkTy  `bson:"bookmarks"`
+	ID                  bson.ObjectId `bson:"_id"`
+	Username            string        `bson:"username"json:"username"`
+	Password            string        `bson:"password" json:"password"`
+	AvailableCategories []string      `bson:"available_categories" json:"available_categories"`
+	Bookmarks           []bookmarkTy  `bson:"bookmarks" json:"bookmarks"`
 }
 
 type messageTy struct {
@@ -46,12 +47,12 @@ type messageTy struct {
 type bookmarkTy struct {
 	URL              string   `bson:"url" json:"url"`
 	ShortReview      string   `bson:"shortReview" json:"shortReview"`
-	TitleText        string   `bson:"titleText" json:"title_text"`
 	Title            string   `bson:"title" json:"title"`
 	Images           []string `bson:"images" json:"images"`
 	IconName         string   `bson:"icon" json:"icon"`
 	WVRCategories    []string `bson:"wvrcategories" json:"wvr_categories"`
 	CustomCategories []string `bson:"customcategories" json:"custom_categories"`
+	Keywords         []string `bsonm:"keywords" json:"keywords"`
 	Lat              float64  `bson:"lat" json:"lat"`
 	Long             float64  `bson:"long" json:"long"`
 }
@@ -60,8 +61,9 @@ type coordinates struct {
 	Lon float64 `json:"lon" bson:"lon"`
 }
 
-type bookmarksTy struct {
-	Bookmarks []bookmarkTy `json:"bookmarks"`
+type data struct {
+	AvailableCategories []CategoryTy
+	Bookmarks           []bookmarkTy `json:"bookmarks"`
 }
 type processUrlFinished struct {
 	Url        []*url.URL
@@ -76,6 +78,9 @@ type attributesTy struct {
 type channelData struct {
 	Url         string
 	Docselector bson.M
+}
+type CategoryTy struct {
+	Category string
 }
 type categories struct {
 	Categories []string
@@ -92,12 +97,16 @@ var dataChannel = make(chan channelData, 2)
 var categoriesChannel = make(chan categories)
 var service *visualrecognitionv3.VisualRecognitionV3
 var serviceErr error
+var Id string
+var orderCookieName string
+var sessionCookieName string
 
 func main() {
 	byteArray, _ := ioutil.ReadFile("apiKey")
 	apiKey := string(byteArray)
 	attributes.imgSrcs = make(map[int]string)
-	cookieName = "pressMe"
+	sessionCookieName = "pressMe"
+	orderCookieName = "orderMethod"
 	service, serviceErr = visualrecognitionv3.NewVisualRecognitionV3(&visualrecognitionv3.VisualRecognitionV3Options{
 		URL:       "https://gateway.watsonplatform.net/visual-recognition/api",
 		Version:   "2018-03-19",
@@ -124,7 +133,32 @@ func main() {
 	http.HandleFunc("/deleteAccount", deleteAccountHandler)
 	http.HandleFunc("/update", updateHandler)
 	http.HandleFunc("/gridGetIcon/", getIconFromGrid)
+	http.HandleFunc("/newCategory", newCategoryHandler)
 	http.ListenAndServe(":4242", nil)
+}
+
+func newCategoryHandler(writer http.ResponseWriter, request *http.Request) {
+	fmt.Println("newCategory")
+	cookie, err := request.Cookie("pressMe")
+	check(err)
+	var Id string
+	var user readUserTy
+	if cookie != nil {
+
+		catName := request.PostFormValue("catName")
+		fmt.Println("catName:", catName)
+		Id = cookie.Value
+		fmt.Println("Id", Id)
+		docSelector := bson.M{"_id": bson.ObjectIdHex(Id)}
+		err := usersCollection.Find(docSelector).One(&user)
+		check(err)
+		user.AvailableCategories = append(user.AvailableCategories, catName)
+		err = usersCollection.Update(docSelector, user)
+		check(err)
+		fmt.Fprint(writer, "sucess")
+	} else {
+		fmt.Fprint(writer, "nicht eingeloogt error")
+	}
 }
 func check_ResponseToHTTP(err error, writer http.ResponseWriter) {
 	if err != nil {
@@ -138,6 +172,8 @@ func check(err error) {
 		panic(err)
 	}
 }
+
+//todo no app crash when cookie exits but no entry in db
 func getIconFromGrid(writer http.ResponseWriter, request *http.Request) {
 	iconName := request.URL.Query().Get("fileName")
 	fmt.Println("iconName", iconName)
@@ -145,12 +181,14 @@ func getIconFromGrid(writer http.ResponseWriter, request *http.Request) {
 		fmt.Println("iconName:", iconName)
 		img, err := favIconsGridFs.Open(iconName)
 		check(err)
-		fmt.Println(img.ContentType())
-		writer.Header().Add("Content-Type", "image/jpg")
+		fmt.Println("img.ContenType", img.ContentType())
+		//by now no Content-Type  is saved in DB
+		writer.Header().Add("Content-Type", img.ContentType())
 		_, err = io.Copy(writer, img)
 		check_ResponseToHTTP(err, writer)
+
 		err = img.Close()
-		fmt.Println("img.ContenType", img.ContentType())
+
 		check_ResponseToHTTP(err, writer)
 	}
 
@@ -161,13 +199,12 @@ func updateHandler(writer http.ResponseWriter, request *http.Request) {
 
 	Id = cookie.Value
 	//ToDo send json instead of executing template
-	/*bytestring, err := json.Marshal(getBookmarksEntries())
+	bytestring, err := json.Marshal(getBookmarksEntries())
 	if err != nil {
 		fmt.Println(err)
 	}
 	jsonString := string(bytestring)
-	fmt.Fprint(writer, jsonString)*/
-	t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries())
+	fmt.Fprint(writer, jsonString)
 }
 func getAndProcessPage() {
 	channelData := <-dataChannel
@@ -224,9 +261,9 @@ func getAndProcessPage() {
 		for i := range user.Bookmarks {
 			if user.Bookmarks[i].URL == pageUrl {
 				user.Bookmarks[i].Images = append(user.Bookmarks[i].Images, absURL.String())
-				user.Bookmarks[i].CustomCategories = attributes.keywords
+				user.Bookmarks[i].Keywords = attributes.keywords
+				user.Bookmarks[i].Title = attributes.title
 				user.Bookmarks[i].IconName = attributes.title
-				user.Bookmarks[i].TitleText = attributes.title
 				user.Bookmarks[i].ShortReview = attributes.description
 			}
 
@@ -251,12 +288,12 @@ func getAndProcessPage() {
 	err = usersCollection.Update(docSelector, user)
 	go classesRecoginition(imgUrls)
 	categories := <-categoriesChannel
-	fmt.Println("kategorien diemüber den channel gesendet wurden", categories)
+
 	err = usersCollection.Find(docSelector).One(&user)
 	check(err)
 	for i := range user.Bookmarks {
 		if user.Bookmarks[i].URL == pageUrl {
-			fmt.Println("eintrag gfunden")
+
 			for _, category := range categories.Categories {
 				user.Bookmarks[i].WVRCategories = append(user.Bookmarks[i].WVRCategories, category)
 			}
@@ -334,7 +371,7 @@ func logoutHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	newCookie := http.Cookie{
-		Name:   cookieName,
+		Name:   sessionCookieName,
 		MaxAge: -1,
 	}
 	http.SetCookie(writer, &newCookie)
@@ -355,7 +392,7 @@ func registrateHandler(writer http.ResponseWriter, request *http.Request) {
 
 		if userExists == 0 {
 
-			doc1 := userTy{userName, password, nil, []bookmarkTy{}}
+			doc1 := userTy{userName, password, []CategoryTy{}, []bookmarkTy{}}
 			var errMessage messageTy
 			errMessage.Message = "Benutzer erstellt"
 			usersCollection.Insert(doc1)
@@ -397,13 +434,13 @@ func urlAjaxHandler(_ http.ResponseWriter, request *http.Request) {
 }
 
 func extractPosition(urls []*url.URL) {
-	fmt.Println("extractPositions")
+
 	var coordinates = coordinates{}
 
 	for i, url := range urls {
 		res, err := http.Get(url.String())
 		check(err)
-		fmt.Println("res:", res)
+
 		file, err := tempImageGridFs.Create("tmp")
 		_, err = io.Copy(file, res.Body)
 		check(err)
@@ -446,8 +483,11 @@ func getAndSaveFavicon(Url string, title string) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("title", title)
+
+	mimeType := res.Header.Get("Content-Type")
 	gridFile, err := favIconsGridFs.Create(title)
+	gridFile.SetContentType(mimeType)
+
 	if err != nil {
 		fmt.Println("error while creating:", err)
 	}
@@ -466,8 +506,8 @@ func getAndSaveFavicon(Url string, title string) {
 }
 func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 	//ToDo change example
-	cookie, _ := request.Cookie("pressMe")
-
+	sessionCookie, _ := request.Cookie("pressMe")
+	//orderCookie,_:=request.Cookie(orderCookieName)
 	if request.Method == "POST" {
 
 		var users []readUserTy
@@ -489,13 +529,17 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 			Id = users[0].ID.Hex()
 
 			setCookie := http.Cookie{
-				Name:  cookieName,
+				Name:  sessionCookieName,
 				Value: Id,
 				Path:  "/",
 			}
 
 			http.SetCookie(writer, &setCookie)
-
+			setCookie = http.Cookie{
+				Name:  orderCookieName,
+				Value: "normal",
+				Path:  "/",
+			}
 			err = t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries())
 			if err != nil {
 				log.Fatal(err)
@@ -507,8 +551,9 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 			t.ExecuteTemplate(writer, "login", errMessage)
 		}
 	} else if request.Method == "GET" {
-		if cookie != nil {
-			Id = cookie.Value
+		if sessionCookie != nil {
+			Id = sessionCookie.Value
+
 			t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries())
 		} else {
 			t.ExecuteTemplate(writer, "login", nil)
@@ -517,7 +562,7 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 }
-func getBookmarksEntries() bookmarksTy {
+func getBookmarksEntries() readUserTy {
 
 	var doc readUserTy
 
@@ -526,7 +571,11 @@ func getBookmarksEntries() bookmarksTy {
 		log.Fatal(err)
 	}
 
-	return bookmarksTy{Bookmarks: doc.Bookmarks}
+	sort.Slice(doc.Bookmarks, func(i, j int) bool {
+		return doc.Bookmarks[i].Title < doc.Bookmarks[j].Title
+	})
+
+	return readUserTy{AvailableCategories: doc.AvailableCategories, Bookmarks: doc.Bookmarks}
 }
 func classesRecoginition(urls []*url.URL) {
 	var categories = categories{}
@@ -564,9 +613,9 @@ func classesRecoginition(urls []*url.URL) {
 			//typHierarchie := *classes[0].TypeHierarchy
 
 			//fmt.Printf("\n------------------Das Image %s wurde in die Typ-Hierarchie %s eingeordnet.\n", imageName, typHierarchie)
-			fmt.Println("Die ermittelten Kategorien und Scores lauten:")
+
 			for _, wert := range classes {
-				fmt.Printf("%s, %f\n", *wert.ClassName, *wert.Score)
+
 				categories.Categories = append(categories.Categories, *wert.ClassName)
 			}
 		}

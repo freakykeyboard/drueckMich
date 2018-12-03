@@ -22,7 +22,15 @@ window.addEventListener("load",()=>{
                 }
             }
             if (response.bookmarks) {
-
+                console.log('response.bookmarks before sorting',response.bookmarks);
+                    response.bookmarks.sort(function(a,b){
+                   let x=a.title.toLowerCase();
+                   let y=b.title.toLowerCase();
+                   if (x<y)return -1;
+                   if (x>y)return 1;
+                   return 0;
+                });
+                console.log('response.bookmarks before sorting',response.bookmarks);
                 for (let item in response.bookmarks){
                     let bookmark=response.bookmarks[item];
 
@@ -32,6 +40,7 @@ window.addEventListener("load",()=>{
                         switch (i) {
                             case 0:
                                 let a=document.createElement("a");
+                                a.setAttribute("target","_blank")
                                 a.setAttribute("href",bookmark.url);
                                 a.innerText=bookmark.url;
                                 td.appendChild(a)
@@ -64,17 +73,19 @@ window.addEventListener("load",()=>{
 
                             case 7:
                                 let p=document.createElement("P");
-                                td.appendChild(p);
+
 
                                 let text=document.createTextNode("Latitude");
-                                td.appendChild(text)
+                                p.appendChild(text);
+                                td.appendChild(p);
                                 text=document.createTextNode(bookmark.lat);
                                 td.appendChild(text)
                                 let br=document.createElement("br");
                                 td.appendChild(br)
                                 p=document.createElement("p");
                                 text=document.createTextNode("Longitude");
-                                td.appendChild(text)
+                                p.appendChild(text)
+                                td.appendChild(p)
                                 text=document.createTextNode(bookmark.long);
                                 td.appendChild(text)
                                 break;
@@ -104,5 +115,15 @@ window.addEventListener("load",()=>{
 });
 
 function titleClick(e){
+    let url="setSortProperties";
+    let formData=new FormData();
+    let xhr=new XMLHttpRequest();
+    xhr.addEventListener("load",()=>{
+       console.log(xhr.responseText)
+    });
+    xhr.open("POST",url);
 
+    formData.append('orderBy','title');
+    xhr.send(formData);
+console.log('clicked')
 }

@@ -85,6 +85,13 @@ type CategoryTy struct {
 type categories struct {
 	Categories []string
 }
+type cookieTy struct {
+	OrderMethod, Orderby string `json:"order_method"`
+	customOrder          bool   `json:"custom_order"`
+}
+type formDataTy struct {
+	Orderby string
+}
 
 var attributes attributesTy
 
@@ -107,6 +114,7 @@ func main() {
 	attributes.imgSrcs = make(map[int]string)
 	sessionCookieName = "pressMe"
 	orderCookieName = "orderMethod"
+
 	service, serviceErr = visualrecognitionv3.NewVisualRecognitionV3(&visualrecognitionv3.VisualRecognitionV3Options{
 		URL:       "https://gateway.watsonplatform.net/visual-recognition/api",
 		Version:   "2018-03-19",
@@ -134,7 +142,33 @@ func main() {
 	http.HandleFunc("/update", updateHandler)
 	http.HandleFunc("/gridGetIcon/", getIconFromGrid)
 	http.HandleFunc("/newCategory", newCategoryHandler)
+	http.HandleFunc("/setSortProperties", sortPropertiesHandler)
 	http.ListenAndServe(":4242", nil)
+}
+
+func sortPropertiesHandler(writer http.ResponseWriter, request *http.Request) {
+	oldCookie, _ := request.Cookie(orderCookieName)
+	orderBy := request.PostFormValue("orderBy")
+
+	var cookieData cookieTy
+
+	if err := json.Unmarshal([]byte(oldCookie.Value), &cookieData); err != nil {
+
+	}
+	fmt.Println("cookieData", cookieData)
+	cookieData.Orderby = orderBy
+	fmt.Println("cookieData", cookieData)
+
+	byteString, _ := json.Marshal(cookieData)
+	jsonString := string(byteString)
+
+	newCookie := http.Cookie{
+		Name:  orderCookieName,
+		Value: jsonString,
+		Path:  "/",
+	}
+	http.SetCookie(writer, &newCookie)
+
 }
 
 func newCategoryHandler(writer http.ResponseWriter, request *http.Request) {
@@ -195,15 +229,18 @@ func getIconFromGrid(writer http.ResponseWriter, request *http.Request) {
 }
 
 func updateHandler(writer http.ResponseWriter, request *http.Request) {
+	//ToDo no cookie
 	cookie, _ := request.Cookie("pressMe")
+	orderMethodCookie, _ := request.Cookie(orderCookieName)
 
 	Id = cookie.Value
-	//ToDo send json instead of executing template
-	bytestring, err := json.Marshal(getBookmarksEntries())
+
+	bytestring, err := json.Marshal(getBookmarksEntries(orderMethodCookie.Value))
 	if err != nil {
 		fmt.Println(err)
 	}
 	jsonString := string(bytestring)
+
 	fmt.Fprint(writer, jsonString)
 }
 func getAndProcessPage() {
@@ -507,7 +544,8 @@ func getAndSaveFavicon(Url string, title string) {
 func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 	//ToDo change example
 	sessionCookie, _ := request.Cookie("pressMe")
-	//orderCookie,_:=request.Cookie(orderCookieName)
+
+	orderCookie, _ := request.Cookie(orderCookieName)
 	if request.Method == "POST" {
 
 		var users []readUserTy
@@ -533,14 +571,18 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 				Value: Id,
 				Path:  "/",
 			}
-
+			cookie := cookieTy{OrderMethod: "undefined", Orderby: "undefined", customOrder: false}
+			byteString, _ := json.Marshal(cookie)
+			jsonString := string(byteString)
 			http.SetCookie(writer, &setCookie)
 			setCookie = http.Cookie{
 				Name:  orderCookieName,
-				Value: "normal",
+				Value: jsonString,
 				Path:  "/",
 			}
-			err = t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries())
+
+			http.SetCookie(writer, &setCookie)
+			err = t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries(setCookie.Value))
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -554,7 +596,7 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 		if sessionCookie != nil {
 			Id = sessionCookie.Value
 
-			t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries())
+			t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries(orderCookie.Value))
 		} else {
 			t.ExecuteTemplate(writer, "login", nil)
 		}
@@ -562,18 +604,30 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 }
-func getBookmarksEntries() readUserTy {
-
+func getBookmarksEntries(orderMethod string) readUserTy {
 	var doc readUserTy
-
-	err := usersCollection.Find(bson.M{"_id": bson.ObjectIdHex(Id)}).One(&doc)
-	if err != nil {
-		log.Fatal(err)
+	var dat cookieTy
+	if err := json.Unmarshal([]byte(orderMethod), &dat); err != nil {
+		fmt.Printf("%+v\n", dat)
 	}
+	if dat.customOrder {
+		switch dat.Orderby {
+		case "title":
 
-	sort.Slice(doc.Bookmarks, func(i, j int) bool {
-		return doc.Bookmarks[i].Title < doc.Bookmarks[j].Title
-	})
+			break
+		default:
+
+		}
+	} else {
+		err := usersCollection.Find(bson.M{"_id": bson.ObjectIdHex(Id)}).One(&doc)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		sort.Slice(doc.Bookmarks, func(i, j int) bool {
+			return doc.Bookmarks[i].Title < doc.Bookmarks[j].Title
+		})
+	}
 
 	return readUserTy{AvailableCategories: doc.AvailableCategories, Bookmarks: doc.Bookmarks}
 }

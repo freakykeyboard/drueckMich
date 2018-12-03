@@ -11,7 +11,7 @@ sendButton.addEventListener("click",(e)=>{
     xhr.addEventListener("load",()=>{
         console.log(xhr.responseText)
     });
-    xhr.open('POST',"http://localhost:4242/newCategory");
+    xhr.open('POST',"newCategory");
     xhr.send(formData)
 });
 // Get the modal

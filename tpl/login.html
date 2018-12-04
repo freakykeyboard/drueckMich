@@ -11,12 +11,13 @@
         <br>
         <input type="submit" value="login">
     </form>
-    <form method="post" action="registrate">
+
         <label>registrieren?</label>
-        <input type="submit" value="registrieren">
-    </form>
+        <input type="button" id="registrationButton" value="registrieren">
+
     <p>{{.Message}}</p>
 </div>
-
+{{template "registrationModal"}}
+<script src="registrationModal.js"></script>
 {{template "end"}}
 {{end}}

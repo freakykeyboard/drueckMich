@@ -4,10 +4,14 @@
     <div class="item2">
 
         <div class="Column">
-            <input type="button" value="deleteUser">
+            <form action="deleteAccount">
+            <input type="submit" value="deleteUser" >
+            </form>
         </div>
         <div class="Column">
-            <input type="button" value="logout">
+            <form action="logout">
+            <input type="submit" value="logout">
+            </form>
         </div>
         <div class="Column">
             <button value="neue Kategorie" id="newCategory">neue Kategorie</button>
@@ -49,7 +53,7 @@
                     <td>{{.Images}}</td>
                     <td><img src="/gridGetIcon?fileName={{.IconName}}"></td>
                     <td>{{range .WVRCategories}}{{.}},{{end}}</td>
-                    <td><img src="plusIcon.png">{{.CustomCategories}}</td>
+                    <td><img id={{.URL}} class="addCategory" onclick="addCategoryToBookmark(event)" src="plusIcon.png?"{{.URL}}><p>{{range .CustomCategories}}{{.}},{{end}}</p></td>
                     <td><P>Latitude {{.Lat}}</P>,<p>Longitude {{.Long}}</p></td>
 
                 </tr>
@@ -65,7 +69,7 @@
             <td></td>
             <td><img></td>
             <td></td>
-            <td><img></td>
+            <td><p></p><img src="plusIcon.png" id="" onclick="addCategoryToBookmark(event)"></td>
             <td><p>Latitude</p>
                 <p>Longitude</p></td>
         </tr>
@@ -75,5 +79,8 @@
 
     {{template "modal"}}
     <script src="modal.js"></script>
+        {{template "addCategoryModal"}}
+        <script src="addCategoryModal.js"></script>
+
     {{template "end"}}
 {{end}}

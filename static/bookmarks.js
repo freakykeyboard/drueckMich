@@ -33,8 +33,6 @@ window.addEventListener("load", () => {
                 for (let item in response.bookmarks) {
                     let bookmark = response.bookmarks[item];
                     a.setAttribute("href", bookmark.url);
-
-
                     a.textContent = bookmark.url;
                     tds[1].textContent = bookmark.shortReview;
                     tds[2].textContent = bookmark.title;
@@ -43,9 +41,10 @@ window.addEventListener("load", () => {
                     img.setAttribute("src","/gridGetIcon?fileName="+bookmark.icon);
                     img.content=bookmark.icon;
                     tds[5].textContent = bookmark.wvr_categories;
-
-
-                    tds[6].textContent = bookmark.custom_categorie;
+                    img=tds[6].querySelector("img");
+                    img.setAttribute("id",bookmark.url)
+                    p=tds[6].querySelector("p");
+                    p.textContent=bookmark.categories;
                     p = tds[7].querySelectorAll("p");
                     p[0].textContent = "Latitude " + bookmark.lat;
                     p[1].textContent = "Longitude " + bookmark.long;
@@ -64,7 +63,7 @@ window.addEventListener("load", () => {
 
 });
 
-function titleClick(e) {
+function titleClick() {
     let url = "setSortProperties";
     let formData = new FormData();
     let xhr = new XMLHttpRequest();
@@ -76,4 +75,15 @@ function titleClick(e) {
     formData.append('orderBy', "0");
     xhr.send(formData);
     console.log('clicked')
+}
+function addCategoryToBookmark(e){
+    let url=e.target.getAttribute("id");
+    let formData=new FormData();
+    let xhr=new XMLHttpRequest();
+    formData.append("url",url);
+    xhr.addEventListener("load",()=>{
+
+    });
+    xhr.open("POST","addCategoryToBookmark");
+    xhr.send(formData);
 }

@@ -12,14 +12,14 @@ sendButton.addEventListener("click",(e)=>{
         console.log(xhr.responseText)
     });
     xhr.open('POST',"newCategory");
-    xhr.send(formData)
+    xhr.send(formData);
     modal.style.display = "none";
 });
 // Get the modal
-var modal = document.getElementById('myModal');
+let modal = document.getElementById('myModal');
 
 // Get the button that opens the modal
-var btn = document.getElementById("newCategory");
+let btn = document.getElementById("newCategory");
 
 // Get the <span> element that closes the modal
 

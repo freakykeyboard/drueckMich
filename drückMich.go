@@ -24,7 +24,8 @@ import (
 var t = template.Must(template.ParseFiles(filepath.Join("./", "tpl", "head.html"),
 	filepath.Join("./", "tpl", "login.html"), filepath.Join("./", "tpl", "bookmarks.html"),
 	filepath.Join("./", "tpl", "end.html"), filepath.Join("./", "tpl", "registrate.html"),
-	filepath.Join("./", "tpl", "modal.html")))
+	filepath.Join("./", "tpl", "modal.html"),filepath.Join("./","tpl","addCategoryModal.html"),
+	filepath.Join("./","tpl","registrationModal.html")))
 
 type userTy struct {
 	Username            string       `bson:"username"`
@@ -144,7 +145,27 @@ func main() {
 	http.HandleFunc("/gridGetIcon/", getIconFromGrid)
 	http.HandleFunc("/newCategory", newCategoryHandler)
 	http.HandleFunc("/setSortProperties", sortPropertiesHandler)
+	http.HandleFunc("/addCategoryToBookmark",addCategoryToBookmark)
 	http.ListenAndServe(":4242", nil)
+}
+
+func addCategoryToBookmark(writer http.ResponseWriter, request *http.Request) {
+	var user readUserTy
+	cookie,err:=request.Cookie(sessionCookieName)
+	check(err)
+	id:=cookie.Value
+	url:=request.PostFormValue("url")
+	category:=request.PostFormValue("category")
+	docSelector:=bson.M{"_id":id}
+	err=usersCollection.Find(docSelector).All(&user)
+	check(err)
+	for _, bookmark:=range user.Bookmarks {
+		if bookmark.URL==url{
+		bookmark.CustomCategories=append(bookmark.CustomCategories, category)
+		}
+	}
+
+
 }
 
 func sortPropertiesHandler(writer http.ResponseWriter, request *http.Request) {
@@ -413,18 +434,10 @@ func logoutHandler(writer http.ResponseWriter, request *http.Request) {
 
 func registrateHandler(writer http.ResponseWriter, request *http.Request) {
 
-	if request.Method == "GET" {
-
-	} else {
-		request.ParseForm()
-
 		userName := request.PostFormValue("username")
 		password := request.PostFormValue("password")
-
 		userExists, _ := usersCollection.Find(bson.M{"username": userName}).Count()
-
 		if userExists == 0 {
-
 			doc1 := userTy{userName, password, []CategoryTy{}, []bookmarkTy{}}
 			var errMessage messageTy
 			errMessage.Message = "Benutzer erstellt"
@@ -439,7 +452,6 @@ func registrateHandler(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 
-}
 func urlAjaxHandler(_ http.ResponseWriter, request *http.Request) {
 	//ToDo check if entry alread exists
 	fmt.Println("urlAjaxHandler")

@@ -1,0 +1,40 @@
+{{define "registrationModal"}}
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="modal.css">
+    </head>
+    <body>
+    <!-- The Modal -->
+    <div id="registrationModal" class="modal">
+
+        <!-- Modal content -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>neuen Benutzer registrieren</h2>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="">
+                    <label>Benutzername:</label>
+                    <input type="text" name="userName" id="userName" required>
+                    <br>
+                    <label>Passwort:</label>
+                    <input type="password" name="password" id="password" required>
+                    <br>
+                    <input type="button" value="registrate" id="registrate" name="submit">
+                </form>
+                <p>{{.ErrorMessage}}</p>
+            </div>
+            <div class="modal-footer">
+                <h3>Drück Mich</h3>
+            </div>
+        </div>
+    </div>
+    <template>
+        <option></option>
+    </template>
+
+    </body>
+    </html>
+{{end}}

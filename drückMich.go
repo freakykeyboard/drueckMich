@@ -18,6 +18,7 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -147,26 +148,31 @@ func main() {
 }
 
 func sortPropertiesHandler(writer http.ResponseWriter, request *http.Request) {
+	//ToDo
+	var newCookie http.Cookie
+	var orderMethod bool
 	oldCookie, _ := request.Cookie(orderCookieName)
 	orderBy := request.PostFormValue("orderBy")
+	fmt.Println(orderBy)
+	if oldCookie != nil {
+		keyValues := strings.Split(oldCookie.Value, "&")
+		for i, keyValue := range keyValues {
+			parts := strings.Split(keyValue, "=")
+			if i == 0 {
+				if parts[1] == orderBy {
 
-	var cookieData cookieTy
-
-	if err := json.Unmarshal([]byte(oldCookie.Value), &cookieData); err != nil {
-
+					orderMethod = true
+				}
+			}
+		}
+	} else {
+		newCookie = http.Cookie{
+			Name:  orderCookieName,
+			Value: "orderBy=" + orderBy + "&ascending=true",
+			Path:  "/",
+		}
 	}
-	fmt.Println("cookieData", cookieData)
-	cookieData.Orderby = orderBy
-	fmt.Println("cookieData", cookieData)
 
-	byteString, _ := json.Marshal(cookieData)
-	jsonString := string(byteString)
-
-	newCookie := http.Cookie{
-		Name:  orderCookieName,
-		Value: jsonString,
-		Path:  "/",
-	}
 	http.SetCookie(writer, &newCookie)
 
 }
@@ -180,9 +186,9 @@ func newCategoryHandler(writer http.ResponseWriter, request *http.Request) {
 	if cookie != nil {
 
 		catName := request.PostFormValue("catName")
-		fmt.Println("catName:", catName)
+
 		Id = cookie.Value
-		fmt.Println("Id", Id)
+
 		docSelector := bson.M{"_id": bson.ObjectIdHex(Id)}
 		err := usersCollection.Find(docSelector).One(&user)
 		check(err)
@@ -191,7 +197,7 @@ func newCategoryHandler(writer http.ResponseWriter, request *http.Request) {
 		check(err)
 		fmt.Fprint(writer, "sucess")
 	} else {
-		fmt.Fprint(writer, "nicht eingeloogt error")
+
 	}
 }
 func check_ResponseToHTTP(err error, writer http.ResponseWriter) {
@@ -210,19 +216,15 @@ func check(err error) {
 //todo no app crash when cookie exits but no entry in db
 func getIconFromGrid(writer http.ResponseWriter, request *http.Request) {
 	iconName := request.URL.Query().Get("fileName")
-	fmt.Println("iconName", iconName)
+
 	if len(iconName) != 0 {
-		fmt.Println("iconName:", iconName)
 		img, err := favIconsGridFs.Open(iconName)
 		check(err)
-		fmt.Println("img.ContenType", img.ContentType())
 		//by now no Content-Type  is saved in DB
 		writer.Header().Add("Content-Type", img.ContentType())
 		_, err = io.Copy(writer, img)
 		check_ResponseToHTTP(err, writer)
-
 		err = img.Close()
-
 		check_ResponseToHTTP(err, writer)
 	}
 
@@ -571,17 +573,6 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 				Value: Id,
 				Path:  "/",
 			}
-			cookie := cookieTy{OrderMethod: "undefined", Orderby: "undefined", customOrder: false}
-			byteString, _ := json.Marshal(cookie)
-			jsonString := string(byteString)
-			http.SetCookie(writer, &setCookie)
-			setCookie = http.Cookie{
-				Name:  orderCookieName,
-				Value: jsonString,
-				Path:  "/",
-			}
-
-			http.SetCookie(writer, &setCookie)
 			err = t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries(setCookie.Value))
 			if err != nil {
 				log.Fatal(err)
@@ -608,7 +599,7 @@ func getBookmarksEntries(orderMethod string) readUserTy {
 	var doc readUserTy
 	var dat cookieTy
 	if err := json.Unmarshal([]byte(orderMethod), &dat); err != nil {
-		fmt.Printf("%+v\n", dat)
+
 	}
 	if dat.customOrder {
 		switch dat.Orderby {

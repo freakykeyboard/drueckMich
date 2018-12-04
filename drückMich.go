@@ -18,7 +18,6 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 )
 
@@ -124,7 +123,8 @@ func main() {
 	if serviceErr != nil {
 		panic(serviceErr)
 	}
-	dbSession, _ := mgo.Dial("localhost")
+	dbSession, err := mgo.Dial("localhost")
+	check(err)
 	defer dbSession.Close()
 	dbSession.SetSafe(&mgo.Safe{})
 	db := dbSession.DB("drückMich")
@@ -150,27 +150,12 @@ func main() {
 func sortPropertiesHandler(writer http.ResponseWriter, request *http.Request) {
 	//ToDo
 	var newCookie http.Cookie
-	var orderMethod bool
-	oldCookie, _ := request.Cookie(orderCookieName)
-	orderBy := request.PostFormValue("orderBy")
-	fmt.Println(orderBy)
-	if oldCookie != nil {
-		keyValues := strings.Split(oldCookie.Value, "&")
-		for i, keyValue := range keyValues {
-			parts := strings.Split(keyValue, "=")
-			if i == 0 {
-				if parts[1] == orderBy {
 
-					orderMethod = true
-				}
-			}
-		}
-	} else {
-		newCookie = http.Cookie{
-			Name:  orderCookieName,
-			Value: "orderBy=" + orderBy + "&ascending=true",
-			Path:  "/",
-		}
+	orderBy := request.PostFormValue("orderBy")
+	newCookie = http.Cookie{
+		Name:  orderCookieName,
+		Value: "orderBy=" + orderBy,
+		Path:  "/",
 	}
 
 	http.SetCookie(writer, &newCookie)
@@ -232,16 +217,25 @@ func getIconFromGrid(writer http.ResponseWriter, request *http.Request) {
 
 func updateHandler(writer http.ResponseWriter, request *http.Request) {
 	//ToDo no cookie
+	var jsonString string
 	cookie, _ := request.Cookie("pressMe")
 	orderMethodCookie, _ := request.Cookie(orderCookieName)
 
 	Id = cookie.Value
-
-	bytestring, err := json.Marshal(getBookmarksEntries(orderMethodCookie.Value))
-	if err != nil {
-		fmt.Println(err)
+	if orderMethodCookie != nil {
+		fmt.Println(orderMethodCookie.Value)
+		bytestring, err := json.Marshal(getBookmarksEntries(orderMethodCookie.Value))
+		if err != nil {
+			fmt.Println(err)
+		}
+		jsonString = string(bytestring)
+	} else {
+		bytestring, err := json.Marshal(getBookmarksEntries(""))
+		if err != nil {
+			fmt.Println(err)
+		}
+		jsonString = string(bytestring)
 	}
-	jsonString := string(bytestring)
 
 	fmt.Fprint(writer, jsonString)
 }
@@ -573,7 +567,8 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 				Value: Id,
 				Path:  "/",
 			}
-			err = t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries(setCookie.Value))
+			http.SetCookie(writer, &setCookie)
+			err = t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries(""))
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -586,8 +581,12 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 	} else if request.Method == "GET" {
 		if sessionCookie != nil {
 			Id = sessionCookie.Value
+			if orderCookie != nil {
+				t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries(orderCookie.Value))
+			} else {
+				t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries(""))
+			}
 
-			t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries(orderCookie.Value))
 		} else {
 			t.ExecuteTemplate(writer, "login", nil)
 		}
@@ -597,27 +596,23 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 }
 func getBookmarksEntries(orderMethod string) readUserTy {
 	var doc readUserTy
-	var dat cookieTy
-	if err := json.Unmarshal([]byte(orderMethod), &dat); err != nil {
+	fmt.Println("getBookmarkEntries")
+	fmt.Println("orderMethod:", orderMethod)
 
+	err := usersCollection.Find(bson.M{"_id": bson.ObjectIdHex(Id)}).One(&doc)
+	if err != nil {
+		log.Fatal(err)
 	}
-	if dat.customOrder {
-		switch dat.Orderby {
-		case "title":
+	if len(orderMethod) > 0 {
+		parts := strings.Split(orderMethod, "=")
 
-			break
-		default:
+		if parts[1] == "0" {
+			sort.Slice(doc.Bookmarks, func(i, j int) bool {
+				return doc.Bookmarks[i].Title < doc.Bookmarks[j].Title
+			})
 
 		}
-	} else {
-		err := usersCollection.Find(bson.M{"_id": bson.ObjectIdHex(Id)}).One(&doc)
-		if err != nil {
-			log.Fatal(err)
-		}
 
-		sort.Slice(doc.Bookmarks, func(i, j int) bool {
-			return doc.Bookmarks[i].Title < doc.Bookmarks[j].Title
-		})
 	}
 
 	return readUserTy{AvailableCategories: doc.AvailableCategories, Bookmarks: doc.Bookmarks}

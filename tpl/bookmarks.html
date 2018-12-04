@@ -13,13 +13,13 @@
             <button value="neue Kategorie" id="newCategory">neue Kategorie</button>
         </div>
         <div class="Column">
-           <select>
-            <option>Kategorien</option>
-               <script>console.log({{.}})</script>
-               {{range .AvailableCategories}}
-               <option>{{.}}</option>
-               {{end}}
-           </select>
+            <select>
+                <option>Kategorien</option>
+                <script>console.log({{.}})</script>
+                {{range .AvailableCategories}}
+                    <option>{{.}}</option>
+                {{end}}
+            </select>
         </div>
     </div>
     <div class="item3">
@@ -45,11 +45,11 @@
                 <tr>
                     <td><a href={{.URL}} target="_blank">{{.URL}}</a></td>
                     <td>{{.ShortReview}}</td>
-                   <td>{{.Title}}</td>
+                    <td>{{.Title}}</td>
                     <td>{{.Images}}</td>
                     <td><img src="/gridGetIcon?fileName={{.IconName}}"></td>
                     <td>{{range .WVRCategories}}{{.}},{{end}}</td>
-                    <td>{{.CustomCategories}}</td>
+                    <td><img src="plusIcon.png">{{.CustomCategories}}</td>
                     <td><P>Latitude {{.Lat}}</P>,<p>Longitude {{.Long}}</p></td>
 
                 </tr>
@@ -57,18 +57,19 @@
             </tbody>
         </table>
     </div>
-<template>
-    <tr>
-    <td><a target="_blank"></a></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td><img></td>
-    <td></td>
-    <td></td>
-    <td><p>Latitude</p><p>Longitude</p></td>
-    </tr>
-</template>
+    <template>
+        <tr>
+            <td><a target="_blank"></a></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td><img></td>
+            <td></td>
+            <td><img></td>
+            <td><p>Latitude</p>
+                <p>Longitude</p></td>
+        </tr>
+    </template>
 
     <script src="bookmarks.js"></script>
 

@@ -28,18 +28,24 @@ window.addEventListener("load", () => {
                 temp = document.getElementsByTagName("template")[0];
                 tds = temp.content.querySelectorAll("td");
                 a = temp.content.querySelector("a");
-                img = temp.content.querySelector("img");
+                console.log(tds.length);
+
                 for (let item in response.bookmarks) {
                     let bookmark = response.bookmarks[item];
                     a.setAttribute("href", bookmark.url);
-                    img.setAttribute("src", "/gridGetIcon?fileName=" + bookmark.icon);
+
+
                     a.textContent = bookmark.url;
                     tds[1].textContent = bookmark.shortReview;
                     tds[2].textContent = bookmark.title;
                     tds[3].textContent = bookmark.images;
-                    img.textContent = bookmark.icon;
+                    img=tds[4].querySelector("img");
+                    img.setAttribute("src","/gridGetIcon?fileName="+bookmark.icon);
+                    img.content=bookmark.icon;
                     tds[5].textContent = bookmark.wvr_categories;
-                    tds[6].textContent = bookmark.custom_categories;
+
+
+                    tds[6].textContent = bookmark.custom_categorie;
                     p = tds[7].querySelectorAll("p");
                     p[0].textContent = "Latitude " + bookmark.lat;
                     p[1].textContent = "Longitude " + bookmark.long;
@@ -67,7 +73,7 @@ function titleClick(e) {
     });
     xhr.open("POST", url);
 
-    formData.append('orderBy', 'title');
+    formData.append('orderBy', "0");
     xhr.send(formData);
     console.log('clicked')
 }

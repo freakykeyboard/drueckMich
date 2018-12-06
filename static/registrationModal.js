@@ -33,8 +33,9 @@ btn.onclick = function() {
 
 
 // When the user clicks anywhere outside of the modal, close it
-window.onclick = function(event) {
+window.addEventListener('click',function(event) {
+    console.log(event.target==registrationModal);
     if (event.target == registrationModal) {
         registrationModal.style.display = "none";
     }
-}
+},false);

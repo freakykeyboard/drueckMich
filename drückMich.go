@@ -24,8 +24,8 @@ import (
 var t = template.Must(template.ParseFiles(filepath.Join("./", "tpl", "head.html"),
 	filepath.Join("./", "tpl", "login.html"), filepath.Join("./", "tpl", "bookmarks.html"),
 	filepath.Join("./", "tpl", "end.html"), filepath.Join("./", "tpl", "registrate.html"),
-	filepath.Join("./", "tpl", "modal.html"),filepath.Join("./","tpl","addCategoryModal.html"),
-	filepath.Join("./","tpl","registrationModal.html")))
+	filepath.Join("./", "tpl", "newCategoryModal.html"), filepath.Join("./", "tpl", "removeCategoryModal.html"),
+	filepath.Join("./", "tpl", "registrationModal.html"), filepath.Join("./", "tpl", "addCategoryModal.html")))
 
 type userTy struct {
 	Username            string       `bson:"username"`
@@ -145,26 +145,45 @@ func main() {
 	http.HandleFunc("/gridGetIcon/", getIconFromGrid)
 	http.HandleFunc("/newCategory", newCategoryHandler)
 	http.HandleFunc("/setSortProperties", sortPropertiesHandler)
-	http.HandleFunc("/addCategoryToBookmark",addCategoryToBookmark)
+	http.HandleFunc("/addCategoryToBookmark", addCategoryToBookmark)
 	http.ListenAndServe(":4242", nil)
 }
 
 func addCategoryToBookmark(writer http.ResponseWriter, request *http.Request) {
 	var user readUserTy
-	cookie,err:=request.Cookie(sessionCookieName)
+	var jsonString string
+	orderMethodCookie, _ := request.Cookie(orderCookieName)
+	cookie, err := request.Cookie(sessionCookieName)
 	check(err)
-	id:=cookie.Value
-	url:=request.PostFormValue("url")
-	category:=request.PostFormValue("category")
-	docSelector:=bson.M{"_id":id}
-	err=usersCollection.Find(docSelector).All(&user)
+	id := cookie.Value
+	url := request.PostFormValue("url")
+	category := request.PostFormValue("category")
+	docSelector := bson.M{"_id": bson.ObjectIdHex(id)}
+	err = usersCollection.Find(docSelector).One(&user)
 	check(err)
-	for _, bookmark:=range user.Bookmarks {
-		if bookmark.URL==url{
-		bookmark.CustomCategories=append(bookmark.CustomCategories, category)
+	for i, bookmark := range user.Bookmarks {
+		if bookmark.URL == url {
+			user.Bookmarks[i].CustomCategories = append(user.Bookmarks[i].CustomCategories, category)
 		}
 	}
+	err = usersCollection.Update(docSelector, user)
+	check(err)
+	if orderMethodCookie != nil {
+		fmt.Println(orderMethodCookie.Value)
+		bytestring, err := json.Marshal(getBookmarksEntries(orderMethodCookie.Value))
+		if err != nil {
+			fmt.Println(err)
+		}
+		jsonString = string(bytestring)
+	} else {
+		bytestring, err := json.Marshal(getBookmarksEntries(""))
+		if err != nil {
+			fmt.Println(err)
+		}
+		jsonString = string(bytestring)
+	}
 
+	fmt.Fprint(writer, jsonString)
 
 }
 
@@ -434,23 +453,23 @@ func logoutHandler(writer http.ResponseWriter, request *http.Request) {
 
 func registrateHandler(writer http.ResponseWriter, request *http.Request) {
 
-		userName := request.PostFormValue("username")
-		password := request.PostFormValue("password")
-		userExists, _ := usersCollection.Find(bson.M{"username": userName}).Count()
-		if userExists == 0 {
-			doc1 := userTy{userName, password, []CategoryTy{}, []bookmarkTy{}}
-			var errMessage messageTy
-			errMessage.Message = "Benutzer erstellt"
-			usersCollection.Insert(doc1)
-			t.ExecuteTemplate(writer, "registrate", errMessage)
+	userName := request.PostFormValue("username")
+	password := request.PostFormValue("password")
+	userExists, _ := usersCollection.Find(bson.M{"username": userName}).Count()
+	if userExists == 0 {
+		doc1 := userTy{userName, password, []CategoryTy{}, []bookmarkTy{}}
+		var errMessage messageTy
+		errMessage.Message = "Benutzer erstellt"
+		usersCollection.Insert(doc1)
+		t.ExecuteTemplate(writer, "registrate", errMessage)
 
-		} else {
-			var errMessage messageTy
-			errMessage.Message = "Benutzer existiert schon"
-			t.ExecuteTemplate(writer, "registrate", errMessage)
+	} else {
+		var errMessage messageTy
+		errMessage.Message = "Benutzer existiert schon"
+		t.ExecuteTemplate(writer, "registrate", errMessage)
 
-		}
 	}
+}
 
 func urlAjaxHandler(_ http.ResponseWriter, request *http.Request) {
 	//ToDo check if entry alread exists

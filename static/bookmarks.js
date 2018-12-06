@@ -9,50 +9,9 @@ window.addEventListener("load", () => {
         const url = "update";
 
         xhr.addEventListener("load", () => {
-            let tbody;
-            let response = JSON.parse(xhr.responseText);
 
-            let table = document.getElementById("bookmarkTable");
-            for (let child in table.childNodes) {
-                if (table.childNodes[child].nodeName === "TBODY") {
-                    tbody = table.childNodes[child];
-                    while (table.childNodes[child].firstChild.nextSibling) {
-                        table.childNodes[child].removeChild(table.childNodes[child].firstChild)
-                    }
-                    table.childNodes[child].removeChild(table.childNodes[child].firstChild)
-                }
-            }
-            if (response.bookmarks) {
-                let temp, tds, clone, a, img, p;
-                //get the tenmplate element
-                temp = document.getElementsByTagName("template")[0];
-                tds = temp.content.querySelectorAll("td");
-                a = temp.content.querySelector("a");
-                console.log(tds.length);
+            updateTable(JSON.parse(xhr.responseText));
 
-                for (let item in response.bookmarks) {
-                    let bookmark = response.bookmarks[item];
-                    a.setAttribute("href", bookmark.url);
-                    a.textContent = bookmark.url;
-                    tds[1].textContent = bookmark.shortReview;
-                    tds[2].textContent = bookmark.title;
-                    tds[3].textContent = bookmark.images;
-                    img=tds[4].querySelector("img");
-                    img.setAttribute("src","/gridGetIcon?fileName="+bookmark.icon);
-                    img.content=bookmark.icon;
-                    tds[5].textContent = bookmark.wvr_categories;
-                    img=tds[6].querySelector("img");
-                    img.setAttribute("id",bookmark.url)
-                    p=tds[6].querySelector("p");
-                    p.textContent=bookmark.categories;
-                    p = tds[7].querySelectorAll("p");
-                    p[0].textContent = "Latitude " + bookmark.lat;
-                    p[1].textContent = "Longitude " + bookmark.long;
-                    clone = document.importNode(temp.content, true);
-                    tbody.appendChild(clone)
-                }
-
-            }
 
 
         });
@@ -76,14 +35,51 @@ function titleClick() {
     xhr.send(formData);
     console.log('clicked')
 }
-function addCategoryToBookmark(e){
-    let url=e.target.getAttribute("id");
-    let formData=new FormData();
-    let xhr=new XMLHttpRequest();
-    formData.append("url",url);
-    xhr.addEventListener("load",()=>{
+function updateTable(response){
+    console.log(response);
+    let tbody;
+    let table = document.getElementById("bookmarkTable");
+    for (let child in table.childNodes) {
+        if (table.childNodes[child].nodeName === "TBODY") {
+            tbody = table.childNodes[child];
+            while (table.childNodes[child].firstChild.nextSibling) {
+                table.childNodes[child].removeChild(table.childNodes[child].firstChild)
+            }
+            table.childNodes[child].removeChild(table.childNodes[child].firstChild)
+        }
+    }
+    if (response.bookmarks) {
+        let temp, tds, clone,item, a, img, p,ul,li;
+        //get the tenmplate element
+        temp = document.getElementsByTagName("template")[0];
+        tds = temp.content.querySelectorAll("td");
+        a = temp.content.querySelector("a");
 
-    });
-    xhr.open("POST","addCategoryToBookmark");
-    xhr.send(formData);
+        console.log(tds.length);
+
+
+        for (let i in response.bookmarks) {
+
+            let bookmark = response.bookmarks[i];
+            a.setAttribute("href", bookmark.url);
+            a.textContent = bookmark.url;
+            tds[1].textContent = bookmark.shortReview;
+            tds[2].textContent = bookmark.title;
+            tds[3].textContent = bookmark.images;
+            img=tds[4].querySelector("img");
+            img.setAttribute("src","/gridGetIcon?fileName="+bookmark.icon);
+            img.content=bookmark.icon;
+            tds[5].textContent = bookmark.wvr_categories;
+            img=tds[6].querySelector("img");
+            img.setAttribute("id",bookmark.url);
+          p=tds[6].querySelector("p");
+          p.textContent=bookmark.custom_categories;
+            p = tds[7].querySelectorAll("p");
+            p[0].textContent = "Latitude " + bookmark.lat;
+            p[1].textContent = "Longitude " + bookmark.long;
+            clone = document.importNode(temp.content, true);
+            tbody.appendChild(clone)
+        }
+
+    }
 }

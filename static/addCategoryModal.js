@@ -1,29 +1,27 @@
-let sendButton1 = document.getElementById("send");
-sendButton1.addEventListener("click", (e) => {
-    e.preventDefault()
-    let formData = new FormData();
-    let catName = document.getElementById("catName").value;
-    formData.append("catName", catName);
-    console.log(formData)
-    var xhr = new XMLHttpRequest();
-    xhr.addEventListener("load", () => {
-        console.log(xhr.responseText)
+let id;
+function addCategory(e) {
+    let category=e.target.value;
+    let xhr=new XMLHttpRequest();
+    let url='addCategoryToBookmark';
+    xhr.addEventListener('load',()=>{
+    updateTable(JSON.parse(xhr.responseText));
     });
-    xhr.open('POST', "newCategory");
+    let formData=new FormData();
+    formData.append('url',id);
+    formData.append('category',category);
+    xhr.open('POST',url);
     xhr.send(formData);
-    addCategoryModal.style.display = "none";
-});
-// Get the modal
-let addCategoryModal = document.getElementById('addCategoryModal');
-
-
-function addCategoryToBookmark() {
-    let select = document.getElementById("addSelect");
+}
+function addCategoryToBookmark(e) {
+    console.log('addCategoryModal');
+    id=e.target.getAttribute("id");
+    console.log(id);
+let select=document.getElementById("addSelect");
     let xhr = new XMLHttpRequest();
     let url = "update";
     xhr.addEventListener('load', () => {
         let response = JSON.parse(xhr.responseText);
-        console.log(response)
+
         let temp,item,a,i;
         //get the tenmplate element
         temp = document.getElementsByTagName("template")[1];
@@ -41,11 +39,13 @@ function addCategoryToBookmark() {
     xhr.send();
     addCategoryModal.style.display = "block";
 }
+// Get the modal
+let addCategoryModal = document.getElementById('addCategoryModal');
 
 
-// When the user clicks anywhere outside of the modal, close it
-window.onclick = function (event) {
+window.addEventListener('click',function(event) {
+    console.log(event.target==addCategoryModal);
     if (event.target == addCategoryModal) {
         addCategoryModal.style.display = "none";
     }
-}
+},false);

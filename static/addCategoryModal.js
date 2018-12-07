@@ -4,7 +4,7 @@ function addCategory(e) {
     let xhr=new XMLHttpRequest();
     let url='addCategoryToBookmark';
     xhr.addEventListener('load',()=>{
-    updateTable(JSON.parse(xhr.responseText));
+    updateContent(JSON.parse(xhr.responseText));
     });
     let formData=new FormData();
     formData.append('url',id);
@@ -14,6 +14,7 @@ function addCategory(e) {
 }
 function addCategoryToBookmark(e) {
     console.log('addCategoryModal');
+    console.log(e.target.previousSibling);
     id=e.target.getAttribute("id");
     console.log(id);
 let select=document.getElementById("addSelect");
@@ -24,7 +25,7 @@ let select=document.getElementById("addSelect");
 
         let temp,item,a,i;
         //get the tenmplate element
-        temp = document.getElementsByTagName("template")[1];
+        temp = document.getElementById('selectMenu');
         item = temp.content.querySelector("option");
         for (i in response.available_categories) {
             let category = response.available_categories[i];

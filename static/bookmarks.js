@@ -9,11 +9,7 @@ window.addEventListener("load", () => {
         const url = "update";
 
         xhr.addEventListener("load", () => {
-
-            updateTable(JSON.parse(xhr.responseText));
-
-
-
+            updateContent(JSON.parse(xhr.responseText));
         });
         xhr.open("GET", url, true);
         xhr.send();
@@ -27,16 +23,16 @@ function titleClick() {
     let formData = new FormData();
     let xhr = new XMLHttpRequest();
     xhr.addEventListener("load", () => {
-        console.log(xhr.responseText)
+
     });
     xhr.open("POST", url);
 
     formData.append('orderBy', "0");
     xhr.send(formData);
-    console.log('clicked')
+
 }
-function updateTable(response) {
-    console.log(response);
+function updateContent(data) {
+
     let tbody;
     let table = document.getElementById("bookmarkTable");
     try {
@@ -52,67 +48,84 @@ function updateTable(response) {
     } catch (e) {
 
     }
+    if (data.available_categories){
+        let select=document.getElementById('filterBookmarks');
 
-    if (response.bookmarks) {
-        console.log('response.bookmarks',response.bookmarks);
-        let temp, td, clone, addImg,rmvImg, ulWvr,img, liWvr,ulCustom,liCustom, a, p1, p2, d;
-        //get the tenmplate element
-        temp = document.querySelector('#bookmarkRow');
-        td = temp.content.querySelectorAll("td");
-        a=temp.content.querySelector("a");
+        while (select.firstChild.nextSibling) {
+            select.removeChild(select.firstChild);
+        }
+        select.removeChild(select.firstChild);
+        let temp=document.getElementById('selectCategory').content.cloneNode(true);
+        temp.querySelector('.category').innerText="nach Kategorien filtern";
 
-        addImg=temp.content.querySelector('#add');
-        rmvImg=temp.content.querySelector('#remove');
-        ulWvr=temp.content.querySelector('#wvrUl');
-        liWvr=temp.content.querySelector("#wvrLi");
-        ulCustom=temp.content.querySelector('#customUl');
-        liCustom=temp.content.querySelector("#customLi");
-        p1=temp.content.querySelectorAll("p")[0];
-        p2=temp.content.querySelectorAll("p")[1];
-        for (let i = 0; i < response.bookmarks.length; i++) {
-            let bookmark=response.bookmarks[i];
-            console.log(a);
-            a.setAttribute("src",bookmark.url);
-            a.textContent=bookmark.url;
-            td[0].appendChild(a);
-            td[0].textContent=bookmark.url;
+        select.appendChild(temp);
+        for (let i in data.available_categories){
+            let category=data.available_categories[i];
+            let temp=document.getElementById('selectCategory').content.cloneNode(true);
+            temp.querySelector('.category').innerText=category;
 
-            td[1].textContent=bookmark.shortReview;
-            td[2].textContent=bookmark.title;
+            select.appendChild(temp);
+        }
+    }
+    if (data.bookmarks) {
+        for (let i = 0; i < data.bookmarks.length; i++) {
+            let bookmark=data.bookmarks[i];
 
-            td[3].textContent=bookmark.images;
-            img=temp.content.querySelector('#icon');
-            console.log(img);
-            img.setAttribute("src","/gridGetIcon?fileName="+bookmark.icon);
-            img.textContent="test";
-            td[4].appendChild(img);
-            for (let j=0;j<bookmark.wvr_categories;j++){
-                liWvr.textContent=bookmark.wvr_categories[j];
-                ulWvr.appendChild(liWvr);
+            let temp=document.getElementById('bookmarkRow').content.cloneNode(true);
+            temp.querySelector('.url').innerText=bookmark.url;
+            temp.querySelector('.shortReview').innerText=bookmark.shortReview;
+            temp.querySelector('.title').innerText=bookmark.title;
+            for (let j =0;j<bookmark.images.length;j++){
+                let li=document.createElement('li');
+                li.innerText=bookmark.images[j];
+                temp.querySelector('.images').appendChild(li);
             }
-            td[5].appendChild(ulWvr);
-
-            addImg=temp.content.querySelector("img");
-            addImg.setAttribute("src","plusIcon.png");
-            addImg.setAttribute("onclick","addCategoryToBookmark(event)");
-            td[6].appendChild(addImg);
-
-
-            for (let j=0;j<bookmark.custom_categories;j++){
-                liCustom.textContent=bookmark.custom_categories[j];
-                ulCustom.appendChild(liCustom);
+            for (let j in bookmark.wvr_categories){
+                let li=document.createElement('li');
+                li.innerText=bookmark.wvr_categories[j];
+                temp.querySelector('.wvrCategories').appendChild(li);
             }
-            td[6].appendChild(ulCustom);
+            for (let j in bookmark.custom_categories){
+                let li=document.createElement('li');
+                li.innerText=bookmark.custom_categories[j];
+                temp.querySelector('.customCategories').appendChild(li);
+            }
+            temp.querySelector('.imgIcon').setAttribute('src',"/gridGetIcon?fileName="+bookmark.icon);
 
-            p1.textContent=bookmark.latitude;
-            p2.textContent=bookmark.longitude;
+            temp.querySelector('.lat').innerText+=bookmark.lat;
+            temp.querySelector('.lon').innerText+=bookmark.long;
+            //ToDo saving id instead of url?
+             temp.querySelector('.addCategory').setAttribute('id',bookmark.url);
+             temp.querySelector('.customCategories').setAttribute("id",bookmark.url);
+            tbody.appendChild(temp);
 
-            td[7].appendChild(p1);
-            td[7].appendChild(p2);
-            clone=document.importNode(temp.content,true)
-            tbody.appendChild(clone);
+
         }
 
     }
+}
+function filterBookmarks(e){
+    console.log('filterBookmarks');
+    let index=e.target.selectedIndex;
+    let options=e.target.options;
+    let filter=options[index].innerText.toUpperCase();
+   let tbody=document.getElementById('tbody');
+   let tr=tbody.getElementsByTagName('tr');
+
+   for (let i in tr){
+       console.log(tr);
+       let td=tr[i].getElementsByTagName('td')[6];
+       console.log(td);
+       if (td){
+           let txtValue=td.textContent||td.innerText;
+           if (txtValue.toUpperCase().indexOf(filter)>-1){
+               tr[i].style.display="";
+           } else {
+               tr[i].style.display="none";
+           }
+       }
+   }
+
+
 }
 

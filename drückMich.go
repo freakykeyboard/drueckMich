@@ -146,7 +146,52 @@ func main() {
 	http.HandleFunc("/newCategory", newCategoryHandler)
 	http.HandleFunc("/setSortProperties", sortPropertiesHandler)
 	http.HandleFunc("/addCategoryToBookmark", addCategoryToBookmark)
+	http.HandleFunc("/removeCategory", removeCategory)
 	http.ListenAndServe(":4242", nil)
+}
+
+func removeCategory(writer http.ResponseWriter, request *http.Request) {
+	var user readUserTy
+	var jsonString string
+	orderMethodCookie, _ := request.Cookie(orderCookieName)
+	cookie, err := request.Cookie(sessionCookieName)
+	check(err)
+	id := cookie.Value
+	url := request.PostFormValue("url")
+	category := request.PostFormValue("category")
+	docSelector := bson.M{"_id": bson.ObjectIdHex(id)}
+	err = usersCollection.Find(docSelector).One(&user)
+	check(err)
+	for i, bookmark := range user.Bookmarks {
+		if bookmark.URL == url {
+			for j := len(user.Bookmarks[i].CustomCategories) - 1; i >= 0; i-- {
+				if user.Bookmarks[i].CustomCategories[j] == category {
+					user.Bookmarks[i].CustomCategories = append(user.Bookmarks[i].CustomCategories[:j],
+						user.Bookmarks[i].CustomCategories[j+1:]...)
+
+				}
+			}
+		}
+	}
+	err = usersCollection.Update(docSelector, user)
+
+	check(err)
+	if orderMethodCookie != nil {
+		fmt.Println(orderMethodCookie.Value)
+		bytestring, err := json.Marshal(getBookmarksEntries(orderMethodCookie.Value))
+		if err != nil {
+			fmt.Println(err)
+		}
+		jsonString = string(bytestring)
+	} else {
+		bytestring, err := json.Marshal(getBookmarksEntries(""))
+		if err != nil {
+			fmt.Println(err)
+		}
+		jsonString = string(bytestring)
+	}
+
+	fmt.Fprint(writer, jsonString)
 }
 
 func addCategoryToBookmark(writer http.ResponseWriter, request *http.Request) {

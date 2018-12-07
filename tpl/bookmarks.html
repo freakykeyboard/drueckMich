@@ -17,11 +17,11 @@
             <button value="neue Kategorie" id="newCategory" onclick="openNewCategoryModal()">neue Kategorie</button>
         </div>
         <div class="Column">
-            <select>
-                <option>Kategorien</option>
+            <select onchange="filterBookmarks(event)" id="filterBookmarks">
+                <option>nach Kategorien filtern</option>
                 <script>console.log({{.}})</script>
                 {{range .AvailableCategories}}
-                    <option>{{.}}</option>
+                    <option class="category">{{.}}</option>
                 {{end}}
             </select>
         </div>
@@ -44,37 +44,74 @@
                 <th>Latitude</th>
             </tr>
             </thead>
-            <tbody>
+            <tbody id="tbody">
             {{range .Bookmarks}}
                 <tr>
-                    <td><a href={{.URL}} target="_blank">{{.URL}}</a></td>
-                    <td>{{.ShortReview}}</td>
-                    <td>{{.Title}}</td>
-                    <td>{{.Images}}</td>
-                    <td><img id="icon" src="/gridGetIcon?fileName={{.IconName}}"></td>
-                    <td>{{range .WVRCategories}}{{.}},{{end}}</td>
-                    <td><img id={{.URL}} class="addCategory" onclick="addCategoryToBookmark(event)" src="plusIcon.png?"> <img id={{.URL}} class="removeCategory" onclick="openRemoveCategoryModal(event)" src="minus.png?"><ul id="catList">{{range .CustomCategories}}<li>{{.}}</li>{{end}}</ul></td>
-                    <td><P>Latitude {{.Lat}}</P>,<p>Longitude {{.Long}}</p></td>
-
+                    <td class="url"><a href={{.URL}} target="_blank">{{.URL}}</a></td>
+                    <td class="shortReview">{{.ShortReview}}</td>
+                    <td class="title">{{.Title}}</td>
+                    <td>
+                        <ul class="images">
+                            {{range .Images}}
+                            <li>{{.}}</li>
+                            {{end}}
+                        </ul>
+                    </td>
+                    <td class="icon">
+                        <img class="imgIcon" id="icon" src="/gridGetIcon?fileName={{.IconName}}">
+                    </td>
+                    <td>
+                        <ul class="wvrCategories">
+                        {{range .WVRCategories}}
+                            <li>{{.}}</li>
+                        {{end}}
+                        </ul>
+                    </td>
+                    <td>
+                        <img id={{.URL}} class="addCategory" onclick="addCategoryToBookmark(event)" src="plusIcon.png?">
+                       <!-- <img id={{.URL}} class="removeCategory" onclick="openRemoveCategoryModal(event)" src="minus.png?">-->
+                        <ul class="customCategories" id="catList">
+                            {{range .CustomCategories}}
+                                <li onclick="openRemoveCategoryModal(event)">{{.}}</li>
+                            {{end}}
+                        </ul>
+                    </td>
+                    <td class="coordinates">
+                        <p class="lat">Latitude: {{.Lat}}</p>
+                        <p class="lon">Longitude {{.Long}}
+                        </p>
+                    </td>
                 </tr>
             {{end}}
             </tbody>
         </table>
     </div>
+        <template id="selectCategory">
+            <option class="category">
+            </option>
+        </template>
     <template id="bookmarkRow">
-        {{range .Bookmarks}}
-            <tr>
-                <td><a href= target="_blank"></a></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td><img id="icon" src="/gridGetIcon?fileName="></td>
-                <td></td>
-                <td><img class="addCategory" onclick="addCategoryToBookmark(event)" src="plusIcon.png?"> <img id=class="removeCategory" onclick="openRemoveCategoryModal(event)" src="minus.png?"><ul id="catList"><li></li></ul></td>
-                <td><P>Latitude </P>,<p>Longitude </p></td>
+        <tr>
+            <td class="url"><a target="_blank"></a></td>
+            <td class="shortReview"></td>
+            <td class="title"></td>
+            <td>
+                <ul class="images">
 
-            </tr>
-        {{end}}
+                </ul>
+            </td>
+            <td class="icon"><img class="imgIcon" id="icon" src="/gridGetIcon?fileName="></td>
+            <td class=>
+                <ul class="wvrCategories">
+                </ul>
+            </td>
+            <td><img class="addCategory" onclick="addCategoryToBookmark(event)"  src="plusIcon.png?">
+               <!-- <img class="removeCategory" onclick="openRemoveCategoryModal(event)" src="minus.png?">-->
+                <ul onclick="openRemoveCategoryModal(event)" class="customCategories" ></ul>
+            </td>
+            <td class="coordinates"><p class="lat">Latitude: </p>,<p class="lon">Longitude </p></td>
+
+        </tr>
     </template>
 
     <script src="bookmarks.js"></script>

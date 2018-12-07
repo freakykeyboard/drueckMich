@@ -2,42 +2,26 @@
 
 function openRemoveCategoryModal(e){
     //die url von dem die kategorie entfernt werden soll
-    id=e.target.getAttribute("id");
-let div=document.getElementById("container");
-let xhr=new XMLHttpRequest();
-let url="update";
-    xhr.addEventListener('load', () => {
-        let response = JSON.parse(xhr.responseText);
-        console.log(response);
-        let temp,item,a,p,i,item2;
-        //get the tenmplate element
-        temp = document.getElementsByTagName("template")[2];
-        item = temp.content.querySelector("div");
-        item2=item.querySelector("p");
-        console.log(item);
-        for (i in response.bookmarks) {
-            if (response.bookmarks[i].url===id){
-                for (let j in response.bookmarks[i].custom_categories) {
-                    a = document.importNode(item, true);
-                    p=document.importNode(item2,true);
-                    a.textContent +=response.bookmarks[i].custom_categories[j];
-
-                    p.innerHTML="&#9746";
-                    p.setAttribute("id",id);
-                    div.appendChild(a);
-
-                    a.appendChild(p);
-
-                                  }
+    let catName=e.target;
+    let id=catName.parentElement.previousSibling.previousSibling.id;
+    let div=document.getElementById('container');
+    let p=document.createElement('p');
+    let button=document.createElement("button");
+    button.innerText="bestätigen";
+    button.addEventListener('click',()=>{
+        let xhr=new XMLHttpRequest();
+        let url='removeCategory';
+        let formData=new FormData();
+        formData.append('url',id);
+        formData.append('category',catName.innerText);
+        xhr.open('POST',url);
+        xhr.send(formData);
 
 
-            }
-
-        }
     });
-    // When the user clicks the button, open the modal
-    xhr.open("GET",url);
-    xhr.send();
+    p.innerText="Wollen Sie "+catName.innerText+" wirklich entfernen?";
+    div.appendChild(p);
+    div.appendChild(button);
     removeCategoryModal.style.display = "block";
 
 
@@ -57,7 +41,3 @@ window.addEventListener('click',function(event) {
         removeCategoryModal.style.display = "none";
     }
 },false);
-function removeCategory(e){
-    console.log('removeCategoryHandler');
-    console.log(e.target)
-}

@@ -51,7 +51,7 @@
                     <td>{{.ShortReview}}</td>
                     <td>{{.Title}}</td>
                     <td>{{.Images}}</td>
-                    <td><img src="/gridGetIcon?fileName={{.IconName}}"></td>
+                    <td><img id="icon" src="/gridGetIcon?fileName={{.IconName}}"></td>
                     <td>{{range .WVRCategories}}{{.}},{{end}}</td>
                     <td><img id={{.URL}} class="addCategory" onclick="addCategoryToBookmark(event)" src="plusIcon.png?"> <img id={{.URL}} class="removeCategory" onclick="openRemoveCategoryModal(event)" src="minus.png?"><ul id="catList">{{range .CustomCategories}}<li>{{.}}</li>{{end}}</ul></td>
                     <td><P>Latitude {{.Lat}}</P>,<p>Longitude {{.Long}}</p></td>
@@ -61,19 +61,20 @@
             </tbody>
         </table>
     </div>
-    <template>
+    <template id="bookmarkRow">
+        {{range .Bookmarks}}
+            <tr>
+                <td><a href= target="_blank"></a></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td><img id="icon" src="/gridGetIcon?fileName="></td>
+                <td></td>
+                <td><img class="addCategory" onclick="addCategoryToBookmark(event)" src="plusIcon.png?"> <img id=class="removeCategory" onclick="openRemoveCategoryModal(event)" src="minus.png?"><ul id="catList"><li></li></ul></td>
+                <td><P>Latitude </P>,<p>Longitude </p></td>
 
-        <tr>
-            <td><a target="_blank"></a></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td><img></td>
-            <td></td>
-            <td><img src="plusIcon.png" id="" onclick="addCategoryToBookmark(event)"><img id="" class="removeCategory" onclick="openRemoveCategoryModal(event)" src="minus.png?"><p></p></td>
-            <td><p>Latitude</p>
-                <p>Longitude</p></td>
-        </tr>
+            </tr>
+        {{end}}
     </template>
 
     <script src="bookmarks.js"></script>

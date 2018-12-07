@@ -1,19 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="d918e52f-f33d-4ebc-8016-4159b07f9a6a" name="Default Changelist" comment="watson vr recognition working save classes in db yet to be implemented">
-      <change afterPath="$PROJECT_DIR$/static/minus.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/static/removeCategoryModal.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tpl/removeCategoryModal.html" afterDir="false" />
+    <list default="true" id="d918e52f-f33d-4ebc-8016-4159b07f9a6a" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/drückMich.go" beforeDir="false" afterPath="$PROJECT_DIR$/drückMich.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/addCategoryModal.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/addCategoryModal.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/static/bookmarks.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/bookmarks.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/modal.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/newCategoryModal.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/registrationModal.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/registrationModal.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tpl/addCategoryModal.html" beforeDir="false" afterPath="$PROJECT_DIR$/tpl/addCategoryModal.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tpl/bookmarks.html" beforeDir="false" afterPath="$PROJECT_DIR$/tpl/bookmarks.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tpl/modal.html" beforeDir="false" afterPath="$PROJECT_DIR$/tpl/newCategoryModal.html" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/.idea/httpRequests/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -38,11 +29,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/static/registrationModal.js">
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/drückMich.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="319">
-              <caret line="35" selection-start-line="35" selection-end-line="40" selection-end-column="9" />
+            <state relative-caret-position="-5203">
+              <caret line="241" column="20" selection-start-line="241" selection-start-column="5" selection-end-line="241" selection-end-column="20" />
             </state>
           </provider>
         </entry>
@@ -50,35 +41,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/static/bookmarks.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="514">
-              <caret line="55" column="44" selection-start-line="55" selection-start-column="44" selection-end-line="55" selection-end-column="44" />
+            <state relative-caret-position="1008">
+              <caret line="56" column="61" selection-start-line="56" selection-start-column="61" selection-end-line="56" selection-end-column="61" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/static/addCategoryModal.js">
+        <entry file="file://$PROJECT_DIR$/tpl/bookmarks.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="301">
-              <caret line="44" lean-forward="true" selection-start-line="44" selection-end-line="44" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/static/removeCategoryModal.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="247">
-              <caret line="53" selection-start-line="53" selection-end-line="58" selection-end-column="9" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/static/newCategoryModal.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="251">
-              <caret line="26" lean-forward="true" selection-start-line="26" selection-end-line="26" />
+            <state relative-caret-position="224">
+              <caret line="53" column="67" selection-start-line="53" selection-start-column="67" selection-end-line="53" selection-end-column="77" />
             </state>
           </provider>
         </entry>
@@ -97,8 +70,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>getIc</find>
-      <find>cla</find>
       <find>getBookmark</find>
       <find>pressMeHand</find>
       <find>updateHa</find>
@@ -122,11 +93,13 @@
       <find>http.H</find>
       <find>pressMeHandler</find>
       <find>logoutHandler</find>
-      <find>update</find>
       <find>addC</find>
       <find>new</find>
       <find>id</find>
       <find>newCategoryModal</find>
+      <find>extrac</find>
+      <find>update</find>
+      <find>getIconFromGrid</find>
     </findStrings>
     <replaceStrings>
       <replace />
@@ -167,12 +140,12 @@
         <option value="$PROJECT_DIR$/drückMich.go" />
         <option value="$PROJECT_DIR$/tpl/addCategoryModal.html" />
         <option value="$PROJECT_DIR$/tpl/removeCategoryModal.html" />
-        <option value="$PROJECT_DIR$/static/bookmarks.js" />
         <option value="$PROJECT_DIR$/static/removeCategoryModal.js" />
-        <option value="$PROJECT_DIR$/tpl/bookmarks.html" />
         <option value="$PROJECT_DIR$/static/registrationModal.js" />
         <option value="$PROJECT_DIR$/static/addCategoryModal.js" />
         <option value="$PROJECT_DIR$/static/newCategoryModal.js" />
+        <option value="$PROJECT_DIR$/static/bookmarks.js" />
+        <option value="$PROJECT_DIR$/tpl/bookmarks.html" />
       </list>
     </option>
   </component>
@@ -187,7 +160,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -198,17 +170,13 @@
             <path>
               <item name="drueckMich" type="b2602c69:ProjectViewProjectNode" />
               <item name="drueckMich" type="462c0819:PsiDirectoryNode" />
-              <item name="static" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="drueckMich" type="b2602c69:ProjectViewProjectNode" />
-              <item name="drueckMich" type="462c0819:PsiDirectoryNode" />
               <item name="tpl" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -382,7 +350,7 @@
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32839224" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49945945" visible="true" weight="0.32611173" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49945945" weight="0.31813" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.3990878" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -481,14 +449,15 @@
     <MESSAGE value="refactor goroutines start" />
     <MESSAGE value="started with watson api" />
     <MESSAGE value="watson vr recognition working save classes in db yet to be implemented" />
-    <option name="LAST_COMMIT_MESSAGE" value="watson vr recognition working save classes in db yet to be implemented" />
+    <MESSAGE value="add and remove categories from bookmark" />
+    <option name="LAST_COMMIT_MESSAGE" value="add and remove categories from bookmark" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/drückMich.go</url>
-          <line>457</line>
+          <line>467</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
@@ -647,20 +616,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/drückMich.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="10998">
-          <caret line="630" selection-start-line="630" selection-end-line="630" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/tpl/bookmarks.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="288">
-          <caret line="16" column="74" selection-start-line="16" selection-start-column="74" selection-end-line="16" selection-end-column="74" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/tpl/addCategoryModal.html">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="162">
@@ -672,27 +627,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="162">
           <caret line="9" column="25" selection-start-line="9" selection-start-column="9" selection-end-line="9" selection-end-column="25" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/tpl/removeCategoryModal.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="432">
-          <caret line="24" column="32" selection-start-line="24" selection-start-column="32" selection-end-line="24" selection-end-column="32" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/static/bookmarks.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="514">
-          <caret line="55" column="44" selection-start-line="55" selection-start-column="44" selection-end-line="55" selection-end-column="44" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/static/removeCategoryModal.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="247">
-          <caret line="53" selection-start-line="53" selection-end-line="58" selection-end-column="9" />
         </state>
       </provider>
     </entry>
@@ -712,8 +646,43 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/static/newCategoryModal.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="251">
+        <state relative-caret-position="403">
           <caret line="26" lean-forward="true" selection-start-line="26" selection-end-line="26" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/static/removeCategoryModal.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="468">
+          <caret line="29" lean-forward="true" selection-start-line="29" selection-end-line="29" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tpl/removeCategoryModal.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="432">
+          <caret line="24" column="32" selection-start-line="24" selection-start-column="32" selection-end-line="24" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/static/bookmarks.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1008">
+          <caret line="56" column="61" selection-start-line="56" selection-start-column="61" selection-end-line="56" selection-end-column="61" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tpl/bookmarks.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="224">
+          <caret line="53" column="67" selection-start-line="53" selection-start-column="67" selection-end-line="53" selection-end-column="77" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/drückMich.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-5203">
+          <caret line="241" column="20" selection-start-line="241" selection-start-column="5" selection-end-line="241" selection-end-column="20" />
         </state>
       </provider>
     </entry>

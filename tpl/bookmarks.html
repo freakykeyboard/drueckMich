@@ -1,4 +1,4 @@
-{{define "bookmarks"}}
+    {{define "bookmarks"}}
     {{template "head"}}
 
     <div class="item2">
@@ -17,12 +17,13 @@
             <button value="neue Kategorie" id="newCategory" onclick="openNewCategoryModal()">neue Kategorie</button>
         </div>
         <div class="Column">
-            <select onchange="filterBookmarks(event)" id="filterBookmarks">
+            <select onchange="filterBookmarks()" id="filterBookmarks">
                 <option>nach Kategorien filtern</option>
-                <script>console.log({{.}})</script>
+
                 {{range .AvailableCategories}}
                     <option class="category">{{.}}</option>
                 {{end}}
+
             </select>
         </div>
     </div>
@@ -42,10 +43,14 @@
                 <th>WVR-Kategorien</th>
                 <th>Kategorien</th>
                 <th>Latitude</th>
+                <th><div class="tooltip" onclick="sortAfterTime(event)">Erstelldatum
+                        <span class="tooltiptext">Zum Sortieren nach Erstelldatum klicken</span>
+                    </div></th>
             </tr>
             </thead>
             <tbody id="tbody">
             {{range .Bookmarks}}
+
                 <tr>
                     <td class="url"><a href={{.URL}} target="_blank">{{.URL}}</a></td>
                     <td class="shortReview">{{.ShortReview}}</td>
@@ -81,8 +86,10 @@
                         <p class="lon">Longitude {{.Long}}
                         </p>
                     </td>
+                    <td class="creationDate">{{.CreationDate}}</td>
                 </tr>
             {{end}}
+
             </tbody>
         </table>
     </div>
@@ -110,7 +117,7 @@
                 <ul onclick="openRemoveCategoryModal(event)" class="customCategories" ></ul>
             </td>
             <td class="coordinates"><p class="lat">Latitude: </p>,<p class="lon">Longitude </p></td>
-
+            <td class="creationDate"></td>
         </tr>
     </template>
 

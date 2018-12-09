@@ -32,7 +32,8 @@ function titleClick() {
 
 }
 function updateContent(data) {
-
+    console.log('updateConetent')
+console.log(data);
     let tbody;
     let table = document.getElementById("bookmarkTable");
     try {
@@ -48,9 +49,9 @@ function updateContent(data) {
     } catch (e) {
 
     }
-    if (data.available_categories){
+    if (data){
         let select=document.getElementById('filterBookmarks');
-
+        let index=select.selectedIndex;
         while (select.firstChild.nextSibling) {
             select.removeChild(select.firstChild);
         }
@@ -59,13 +60,16 @@ function updateContent(data) {
         temp.querySelector('.category').innerText="nach Kategorien filtern";
 
         select.appendChild(temp);
-        for (let i in data.available_categories){
-            let category=data.available_categories[i];
-            let temp=document.getElementById('selectCategory').content.cloneNode(true);
-            temp.querySelector('.category').innerText=category;
 
-            select.appendChild(temp);
-        }
+            for (let j in data.available_categories){
+                let category=data.available_categories[j];
+                let temp=document.getElementById('selectCategory').content.cloneNode(true);
+                temp.querySelector('.category').innerText=category;
+
+                select.appendChild(temp);
+            }
+
+        select.selectedIndex=index;
     }
     if (data.bookmarks) {
         for (let i = 0; i < data.bookmarks.length; i++) {
@@ -97,35 +101,70 @@ function updateContent(data) {
             //ToDo saving id instead of url?
              temp.querySelector('.addCategory').setAttribute('id',bookmark.url);
              temp.querySelector('.customCategories').setAttribute("id",bookmark.url);
+             temp.querySelector('.creationDate').innerText=bookmark.CreationDate;
             tbody.appendChild(temp);
 
 
         }
 
     }
+    filterBookmarks();
 }
-function filterBookmarks(e){
+function filterBookmarks(){
     console.log('filterBookmarks');
-    let index=e.target.selectedIndex;
-    let options=e.target.options;
-    let filter=options[index].innerText.toUpperCase();
-   let tbody=document.getElementById('tbody');
-   let tr=tbody.getElementsByTagName('tr');
+    let select=document.getElementById("filterBookmarks");
 
-   for (let i in tr){
-       console.log(tr);
-       let td=tr[i].getElementsByTagName('td')[6];
-       console.log(td);
-       if (td){
-           let txtValue=td.textContent||td.innerText;
-           if (txtValue.toUpperCase().indexOf(filter)>-1){
-               tr[i].style.display="";
-           } else {
-               tr[i].style.display="none";
-           }
-       }
-   }
+    let index=select.selectedIndex;
+    let options=select.options;
+    let filter=options[index].innerText.toUpperCase();
+    let tbody=document.getElementById('tbody');
+    let tr=tbody.getElementsByTagName('tr');
+    //if index===0 no filter is selected
+    if (index!==0){
+        for (let i in tr){
+            try{
+                let td=tr[i].getElementsByTagName('td')[6];
+                if (td){
+                    let txtValue=td.textContent||td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter)>-1){
+                        tr[i].style.display="";
+                    } else {
+                        tr[i].style.display="none";
+                    }
+                }
+            }catch (e) {
+
+            }
+
+        }
+    }else {
+        for (let i in tr){
+            try{
+                let td=tr[i].getElementsByTagName('td')[6];
+                if (td){
+                        tr[i].style.display="";
+
+                }
+            }catch (e) {
+
+            }
+
+        }
+    }
 
 
 }
+function sortAfterTime(){
+    let url = "setSortProperties";
+    let formData = new FormData();
+    let xhr = new XMLHttpRequest();
+    xhr.addEventListener("load", () => {
+
+    });
+    xhr.open("POST", url);
+
+    formData.append('orderBy', "1");
+    xhr.send(formData);
+}
+
 

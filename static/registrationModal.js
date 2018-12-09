@@ -36,6 +36,8 @@ btn.onclick = function() {
 window.addEventListener('click',function(event) {
     console.log(event.target==registrationModal);
     if (event.target == registrationModal) {
+
         registrationModal.style.display = "none";
+
     }
 },false);

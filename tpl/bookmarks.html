@@ -2,7 +2,13 @@
     {{template "head"}}
 
     <div class="item2">
-
+        <fieldset>
+            <legend>Lesezeichen hochladen</legend>
+            <form method="post" action="upLoad" id="uploadBookmark" enctype="multipart/form-data">
+                <input type="file" name="uploadBookmark">
+                <input type="submit" onclick="uploadFile(event)" value="los geht`s">
+            </form>
+        </fieldset>
         <div class="Column">
             <form action="deleteAccount">
             <input type="submit" value="deleteUser" >
@@ -99,7 +105,7 @@
         </template>
     <template id="bookmarkRow">
         <tr>
-            <td class="url"><a target="_blank"></a></td>
+            <td class="url"></td>
             <td class="shortReview"></td>
             <td class="title"></td>
             <td>

@@ -17,13 +17,24 @@ window.addEventListener("load", () => {
 
 
 });
+function uploadFile(e){
+    e.preventDefault()
+    let form=document.getElementById('uploadBookmark');
+    let url='upload';
+    let xhr=new XMLHttpRequest();
+    xhr.addEventListener('load',()=>{
 
+    });
+    xhr.open('POST',url);
+    xhr.send(new FormData(form));
+}
 function titleClick() {
     let url = "setSortProperties";
     let formData = new FormData();
     let xhr = new XMLHttpRequest();
     xhr.addEventListener("load", () => {
-
+        console.log('response')
+        updateContent(JSON.parse(xhr.responseText))
     });
     xhr.open("POST", url);
 
@@ -76,7 +87,12 @@ console.log(data);
             let bookmark=data.bookmarks[i];
 
             let temp=document.getElementById('bookmarkRow').content.cloneNode(true);
-            temp.querySelector('.url').innerText=bookmark.url;
+
+            let a=document.createElement('a');
+            a.setAttribute('target','_blank')
+            a.innerText=bookmark.url
+            a.setAttribute('href',bookmark.url);
+            temp.querySelector('.url').appendChild(a);
             temp.querySelector('.shortReview').innerText=bookmark.shortReview;
             temp.querySelector('.title').innerText=bookmark.title;
             for (let j =0;j<bookmark.images.length;j++){
@@ -159,7 +175,8 @@ function sortAfterTime(){
     let formData = new FormData();
     let xhr = new XMLHttpRequest();
     xhr.addEventListener("load", () => {
-
+        console.log('response');
+        updateContent(JSON.parse(xhr.responseText))
     });
     xhr.open("POST", url);
 

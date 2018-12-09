@@ -14,8 +14,16 @@ function openRemoveCategoryModal(e){
         let formData=new FormData();
         formData.append('url',id);
         formData.append('category',catName.innerText);
+        xhr.addEventListener('load',()=>{
+           updateContent(JSON.parse(xhr.responseText));
+        });
         xhr.open('POST',url);
         xhr.send(formData);
+        removeCategoryModal.style.display = "none";
+        while (div.firstChild.nextSibling) {
+            div.removeChild(div.firstChild);
+        }
+        div.removeChild(div.firstChild);
 
 
     });

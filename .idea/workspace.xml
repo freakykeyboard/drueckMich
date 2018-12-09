@@ -4,13 +4,11 @@
     <list default="true" id="d918e52f-f33d-4ebc-8016-4159b07f9a6a" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/drückMich.go" beforeDir="false" afterPath="$PROJECT_DIR$/drückMich.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/addCategoryModal.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/addCategoryModal.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/static/bookmarks.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/bookmarks.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/registrationModal.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/registrationModal.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tpl/addCategoryModal.html" beforeDir="false" afterPath="$PROJECT_DIR$/tpl/addCategoryModal.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/removeCategoryModal.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/removeCategoryModal.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tpl/bookmarks.html" beforeDir="false" afterPath="$PROJECT_DIR$/tpl/bookmarks.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tpl/login.html" beforeDir="false" afterPath="$PROJECT_DIR$/tpl/login.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tpl/registrate.html" beforeDir="false" afterPath="$PROJECT_DIR$/tpl/registrate.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tpl/registrationModal.html" beforeDir="false" afterPath="$PROJECT_DIR$/tpl/registrationModal.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tpl/head.html" beforeDir="false" afterPath="$PROJECT_DIR$/tpl/head.html" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/.idea/httpRequests/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -38,8 +36,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/drückMich.go">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="354">
-              <caret line="711" column="12" selection-start-line="711" selection-start-column="12" selection-end-line="711" selection-end-column="12" />
+            <state relative-caret-position="278">
+              <caret line="392" column="4" selection-start-line="392" selection-start-column="4" selection-end-line="392" selection-end-column="4" />
             </state>
           </provider>
         </entry>
@@ -47,26 +45,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/tpl/bookmarks.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="430">
-              <caret line="45" column="63" selection-start-line="45" selection-start-column="63" selection-end-line="45" selection-end-column="63" />
+            <state relative-caret-position="136">
+              <caret line="8" column="37" selection-start-line="8" selection-start-column="37" selection-end-line="8" selection-end-column="37" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/static/addCategoryModal.js">
+        <entry file="file://$PROJECT_DIR$/tpl/head.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="272">
-              <caret line="16" column="42" selection-start-line="16" selection-start-column="42" selection-end-line="16" selection-end-column="42" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/tpl/addCategoryModal.html">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="357">
-              <caret line="21" column="47" selection-start-line="21" selection-start-column="47" selection-end-line="21" selection-end-column="47" />
+            <state relative-caret-position="255">
+              <caret line="15" selection-start-line="15" selection-end-line="15" />
             </state>
           </provider>
         </entry>
@@ -74,8 +63,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/static/bookmarks.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="362">
-              <caret line="161" lean-forward="true" selection-start-line="161" selection-end-line="161" />
+            <state relative-caret-position="476">
+              <caret line="28" column="31" selection-start-line="28" selection-start-column="31" selection-end-line="28" selection-end-column="31" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/static/stylesheet.css">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="272">
+              <caret line="16" column="1" lean-forward="true" selection-start-line="16" selection-start-column="1" selection-end-line="16" selection-end-column="1" />
             </state>
           </provider>
         </entry>
@@ -94,9 +92,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>press</find>
-      <find>Id</find>
-      <find>Printf</find>
       <find>pressMeH</find>
       <find>registrate</find>
       <find>readUserTy</find>
@@ -115,7 +110,6 @@
       <find>printf</find>
       <find>getAndSa</find>
       <find>getBOOK</find>
-      <find>get</find>
       <find>getBookmarkEn</find>
       <find>addCategoryToBookmark</find>
       <find>getB</find>
@@ -124,6 +118,10 @@
       <find>set</find>
       <find>urlAja</find>
       <find>urlA</find>
+      <find>get</find>
+      <find>sort</find>
+      <find>setSo</find>
+      <find>remove</find>
     </findStrings>
     <replaceStrings>
       <replace />
@@ -145,7 +143,6 @@
         <option value="$APPLICATION_CONFIG_DIR$/scratches/rest-api_1.http" />
         <option value="$APPLICATION_CONFIG_DIR$/scratches/rest-api_2.http" />
         <option value="$PROJECT_DIR$/drückMichBrowserExtension/background.js" />
-        <option value="$PROJECT_DIR$/tpl/head.html" />
         <option value="$PROJECT_DIR$/tpl/end.html" />
         <option value="$PROJECT_DIR$/static/stylesheet.css" />
         <option value="$PROJECT_DIR$/../gopkg.in/go-playground/validator.v9/validator.go" />
@@ -158,15 +155,16 @@
         <option value="$PROJECT_DIR$/static/modal.js" />
         <option value="$PROJECT_DIR$/tpl/newCategoryModal.html" />
         <option value="$PROJECT_DIR$/static/removeCategoryModal.html" />
-        <option value="$PROJECT_DIR$/static/addCategoryModal.js" />
         <option value="$PROJECT_DIR$/tpl/removeCategoryModal.html" />
-        <option value="$PROJECT_DIR$/static/removeCategoryModal.js" />
         <option value="$PROJECT_DIR$/static/newCategoryModal.js" />
         <option value="$PROJECT_DIR$/tpl/login.html" />
         <option value="$PROJECT_DIR$/tpl/registrate.html" />
         <option value="$PROJECT_DIR$/tpl/registrationModal.html" />
         <option value="$PROJECT_DIR$/static/registrationModal.js" />
         <option value="$PROJECT_DIR$/tpl/addCategoryModal.html" />
+        <option value="$PROJECT_DIR$/static/removeCategoryModal.js" />
+        <option value="$PROJECT_DIR$/static/addCategoryModal.js" />
+        <option value="$PROJECT_DIR$/tpl/head.html" />
         <option value="$PROJECT_DIR$/tpl/bookmarks.html" />
         <option value="$PROJECT_DIR$/static/bookmarks.js" />
         <option value="$PROJECT_DIR$/drückMich.go" />
@@ -191,11 +189,6 @@
             <path>
               <item name="drueckMich" type="b2602c69:ProjectViewProjectNode" />
               <item name="drueckMich" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="drueckMich" type="b2602c69:ProjectViewProjectNode" />
-              <item name="drueckMich" type="462c0819:PsiDirectoryNode" />
-              <item name="drückMichBrowserExtension" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="drueckMich" type="b2602c69:ProjectViewProjectNode" />
@@ -497,35 +490,42 @@
     <MESSAGE value="watson vr recognition working save classes in db yet to be implemented" />
     <MESSAGE value="add and remove categories from bookmark" />
     <MESSAGE value="filter function add and remove categories" />
-    <option name="LAST_COMMIT_MESSAGE" value="filter function add and remove categories" />
+    <MESSAGE value="filter function finished" />
+    <option name="LAST_COMMIT_MESSAGE" value="filter function finished" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/drückMich.go</url>
-          <line>664</line>
+          <line>718</line>
           <option name="timeStamp" value="10" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/drückMich.go</url>
-          <line>594</line>
+          <line>648</line>
           <option name="timeStamp" value="18" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/drückMich.go</url>
-          <line>590</line>
+          <line>644</line>
           <option name="timeStamp" value="24" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/drückMich.go</url>
-          <line>223</line>
+          <line>260</line>
           <option name="timeStamp" value="26" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="DlvLineBreakpoint">
           <url>file://$PROJECT_DIR$/drückMich.go</url>
-          <line>217</line>
+          <line>254</line>
           <option name="timeStamp" value="27" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/drückMich.go</url>
+          <line>183</line>
+          <properties />
+          <option name="timeStamp" value="35" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
@@ -540,6 +540,11 @@
   <component name="debuggerHistoryManager">
     <expressions id="watch">
       <expression>
+        <expression-string>part.FileName()</expression-string>
+        <language-id>go</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
         <expression-string>Id</expression-string>
         <language-id>go</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
@@ -552,10 +557,6 @@
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$APPLICATION_CONFIG_DIR$/scratches/rest-api_2.http" />
-    <entry file="file://$PROJECT_DIR$/../goHttpClient/webScraper.go" />
-    <entry file="file:///usr/lib/go/src/encoding/json/encode.go" />
-    <entry file="file://$PROJECT_DIR$/output.txt" />
     <entry file="file://$PROJECT_DIR$/pw.txt" />
     <entry file="file://$PROJECT_DIR$/tpl/end.html">
       <provider selected="true" editor-type-id="text-editor">
@@ -605,20 +606,6 @@
     </entry>
     <entry file="file:///usr/local/go/src/html/template/template.go" />
     <entry file="file:///usr/local/go/src/net/http/request.go" />
-    <entry file="file://$PROJECT_DIR$/tpl/head.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="216">
-          <caret line="12" selection-start-line="12" selection-end-line="14" selection-end-column="6" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/static/stylesheet.css">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1836">
-          <caret line="102" selection-start-line="102" selection-end-line="102" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/static/modal.css">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="360">
@@ -640,24 +627,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/static/removeCategoryModal.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="85">
-          <caret line="5" column="68" selection-start-line="5" selection-start-column="68" selection-end-line="5" selection-end-column="68" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/tpl/removeCategoryModal.html">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="289">
           <caret line="17" selection-start-line="17" selection-end-line="17" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/static/newCategoryModal.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" column="37" selection-start-line="14" selection-start-column="37" selection-end-line="14" selection-end-column="37" />
         </state>
       </provider>
     </entry>
@@ -752,13 +725,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://C:/Go/src/net/http/server.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="169">
-          <caret line="1847" selection-start-line="1847" selection-end-line="1847" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://C:/Go/src/net/url/url.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="177">
@@ -770,13 +736,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="228">
           <caret line="683" selection-start-line="683" selection-end-line="683" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://C:/Go/src/fmt/print.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="177">
-          <caret line="262" selection-start-line="262" selection-end-line="262" />
         </state>
       </provider>
     </entry>
@@ -797,42 +756,112 @@
     <entry file="file://$PROJECT_DIR$/../gopkg.in/mgo.v2/session.go">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="169">
-          <caret line="2451" selection-start-line="2451" selection-end-line="2451" />
+          <caret line="3816" selection-start-line="3816" selection-end-line="3816" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/static/addCategoryModal.js">
+    <entry file="file://C:/Go/src/fmt/print.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="272">
-          <caret line="16" column="42" selection-start-line="16" selection-start-column="42" selection-end-line="16" selection-end-column="42" />
+        <state relative-caret-position="169">
+          <caret line="251" selection-start-line="251" selection-end-line="251" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/static/newCategoryModal.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="306">
+          <caret line="18" column="3" lean-forward="true" selection-start-line="18" selection-start-column="3" selection-end-line="18" selection-end-column="44" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/static/removeCategoryModal.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="289">
+          <caret line="17" column="55" selection-start-line="17" selection-start-column="55" selection-end-line="17" selection-end-column="55" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/tpl/addCategoryModal.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="357">
+        <state relative-caret-position="243">
           <caret line="21" column="47" selection-start-line="21" selection-start-column="47" selection-end-line="21" selection-end-column="47" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/static/addCategoryModal.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="425">
+          <caret line="37" column="30" selection-start-line="37" selection-start-column="30" selection-end-line="37" selection-end-column="30" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/static/stylesheet.css">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="272">
+          <caret line="16" column="1" lean-forward="true" selection-start-line="16" selection-start-column="1" selection-end-line="16" selection-end-column="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tpl/head.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="15" selection-start-line="15" selection-end-line="15" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/tpl/bookmarks.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="430">
-          <caret line="45" column="63" selection-start-line="45" selection-start-column="63" selection-end-line="45" selection-end-column="63" />
+        <state relative-caret-position="136">
+          <caret line="8" column="37" selection-start-line="8" selection-start-column="37" selection-end-line="8" selection-end-column="37" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/static/bookmarks.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="362">
-          <caret line="161" lean-forward="true" selection-start-line="161" selection-end-line="161" />
+        <state relative-caret-position="476">
+          <caret line="28" column="31" selection-start-line="28" selection-start-column="31" selection-end-line="28" selection-end-column="31" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Go/src/os/file.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="177">
+          <caret line="272" selection-start-line="272" selection-end-line="272" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Go/src/io/io.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="177">
+          <caret line="362" selection-start-line="362" selection-end-line="362" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Go/src/mime/multipart/multipart.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="169">
+          <caret line="301" selection-start-line="301" selection-end-line="301" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Go/src/os/file_windows.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="177">
+          <caret line="175" selection-start-line="175" selection-end-line="175" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://C:/Go/src/net/http/server.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="169">
+          <caret line="1847" selection-start-line="1847" selection-end-line="1847" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/drückMich.go">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="354">
-          <caret line="711" column="12" selection-start-line="711" selection-start-column="12" selection-end-line="711" selection-end-column="12" />
+        <state relative-caret-position="278">
+          <caret line="392" column="4" selection-start-line="392" selection-start-column="4" selection-end-line="392" selection-end-column="4" />
         </state>
       </provider>
     </entry>

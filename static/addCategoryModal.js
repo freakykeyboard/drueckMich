@@ -11,6 +11,7 @@ function addCategory(e) {
     formData.append('category',category);
     xhr.open('POST',url);
     xhr.send(formData);
+    addCategoryModal.style.display = "none";
 }
 function addCategoryToBookmark(e) {
     console.log('addCategoryModal');
@@ -21,12 +22,20 @@ let select=document.getElementById("addSelect");
     let xhr = new XMLHttpRequest();
     let url = "update";
     xhr.addEventListener('load', () => {
+        while (select.firstChild.nextSibling) {
+
+            select.removeChild(select.firstChild);
+        }
+        select.removeChild(select.firstChild);
         let response = JSON.parse(xhr.responseText);
 
         let temp,item,a,i;
         //get the tenmplate element
         temp = document.getElementById('selectMenu');
         item = temp.content.querySelector("option");
+        a = document.importNode(item, true);
+        a.innerText="KAategorie auswählen";
+        select.appendChild(a);
         for (i in response.available_categories) {
             let category = response.available_categories[i];
             a = document.importNode(item, true);
@@ -34,6 +43,7 @@ let select=document.getElementById("addSelect");
 
             select.appendChild(a);
         }
+
     });
     // When the user clicks the button, open the modal
     xhr.open("GET",url);

@@ -15,6 +15,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"path/filepath"
 	"sort"
@@ -166,7 +167,46 @@ func main() {
 	http.HandleFunc("/setSortProperties", sortPropertiesHandler)
 	http.HandleFunc("/addCategoryToBookmark", addCategoryToBookmark)
 	http.HandleFunc("/removeCategory", removeCategory)
+	http.HandleFunc("/upload", analyzeImportedBookmarks)
 	http.ListenAndServe(":4242", nil)
+}
+
+func analyzeImportedBookmarks(writer http.ResponseWriter, request *http.Request) {
+	reader, err := request.MultipartReader()
+
+	if err != nil {
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Jeden "part" in den Ordner ./upDownL kopieren:
+	for {
+		part, err := reader.NextPart()
+		if err == io.EOF {
+			break
+		}
+
+		// falls part.FileName() leer, überspringen:
+		if part.FileName() == "" {
+			continue
+		}
+
+		dst, err := os.Create("./files/" + part.FileName())
+		defer dst.Close()
+
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if _, err := io.Copy(dst, part); err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		//todo is too early file cannot be found ->error
+		go analyzeImport(part.FileName())
+	}
+
 }
 
 func removeCategory(writer http.ResponseWriter, request *http.Request) {
@@ -256,8 +296,16 @@ func sortPropertiesHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	http.SetCookie(writer, &newCookie)
-	err := t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries(newCookie.Value))
-	check(err)
+	var jsonString string
+
+	bytestring, err := json.Marshal(getBookmarksEntries(newCookie.Value))
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	jsonString = string(bytestring)
+
+	fmt.Fprint(writer, jsonString)
 }
 
 func newCategoryHandler(writer http.ResponseWriter, request *http.Request) {
@@ -331,6 +379,17 @@ func updateHandler(writer http.ResponseWriter, request *http.Request) {
 
 	fmt.Fprint(writer, jsonString)
 }
+func analyzeImport(fileName string) {
+	file, err := os.Open(fileName)
+	check(err)
+	//byteArrayPage, err := ioutil.ReadAll(file)
+	defer file.Close()
+	//docZeiger, err := html.Parse(strings.NewReader(string(byteArrayPage)))
+	if err != nil {
+		fmt.Println(err)
+	}
+
+}
 func getAndProcessPage() {
 	channelData := <-dataChannel
 	docSelector := channelData.Docselector
@@ -385,7 +444,6 @@ func getAndProcessPage() {
 
 			imgUrls = append(imgUrls, absURL)
 
-			check(err)
 			docUpdate := bson.M{"$addToSet": bson.M{"images": absURL.String()},
 				"$set": bson.M{"keywords": attributes.keywords, "title": attributes.title, "icon": attributes.title, "shortReview": attributes.description}}
 			err = bookmarkCollection.Update(docSelector, docUpdate)
@@ -694,7 +752,6 @@ func getBookmarksEntries(orderMethod string) dataTy {
 	docSelector := bson.M{"user_id": bson.ObjectIdHex(Id)}
 
 	err := bookmarkCollection.Find(docSelector).All(&docs)
-
 	check(err)
 	err = usersCollection.Find(bson.M{"_id": bson.ObjectIdHex(Id)}).One(&user)
 	check(err)
@@ -707,7 +764,9 @@ func getBookmarksEntries(orderMethod string) dataTy {
 			})
 
 		} else if parts[1] == "1" {
-
+			sort.Slice(docs, func(i, j int) bool {
+				return docs[i].CreationDate.Before(docs[j].CreationDate)
+			})
 		}
 
 	}

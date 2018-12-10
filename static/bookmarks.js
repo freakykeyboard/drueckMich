@@ -43,8 +43,7 @@ function titleClick() {
 
 }
 function updateContent(data) {
-    console.log('updateConetent')
-console.log(data);
+
     let tbody;
     let table = document.getElementById("bookmarkTable");
     try {
@@ -60,7 +59,7 @@ console.log(data);
     } catch (e) {
 
     }
-    if (data){
+    if (data.available_categories){
         let select=document.getElementById('filterBookmarks');
         let index=select.selectedIndex;
         while (select.firstChild.nextSibling) {
@@ -179,7 +178,8 @@ function geospatial(e){
     let url='geospatial';
     let xhr=new XMLHttpRequest();
     xhr.addEventListener('load',()=>{
-
+        console.log('geo response:',JSON.parse(xhr.responseText));
+        updateContent(JSON.parse(xhr.responseText))
     });
     xhr.open('post',url);
     xhr.send(formData);
@@ -190,7 +190,7 @@ function sortAfterTime(){
     let xhr = new XMLHttpRequest();
 
     xhr.addEventListener("load", () => {
-        console.log('response');
+
         updateContent(JSON.parse(xhr.responseText))
     });
     xhr.open("POST", url);

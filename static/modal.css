@@ -14,18 +14,25 @@
 /* Modal Header */
 .modal-header {
     padding: 2px 16px;
-    background-color: #5cb85c;
+
     color: white;
 }
 
 /* Modal Body */
-.modal-body {padding: 2px 16px;}
+.modal-body {
+    color:#4AA3FF;
+    padding: 2px 16px;
+    background-color: aquamarine;
+}
 
 /* Modal Footer */
 .modal-footer {
     padding: 2px 16px;
-    background-color: #5cb85c;
+    background-color: aquamarine;
     color: white;
+}
+#addSelect{
+    color:#4AA3FF ;
 }
 /* Modal Content */
 .modal-content {

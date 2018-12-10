@@ -41,7 +41,10 @@ type readUserTy struct {
 	Password            string        `bson:"password" json:"password"`
 	AvailableCategories []string      `bson:"available_categories" json:"available_categories"`
 }
-
+type GeoJsonTy struct {
+	Type        string    `json:"-"`
+	Coordinates []float64 `json:"coordinates",bson:"coordinates"`
+}
 type messageTy struct {
 	Message string
 }
@@ -58,7 +61,7 @@ type bookmarkTy struct {
 	WVRCategories    []string      `bson:"wvr_categories" json:"wvr_categories"`
 	CustomCategories []string      `bson:"custom_categories" json:"custom_categories"`
 	Keywords         []string      `bson:"keywords" json:"keywords"`
-	Coordinates      []float64     `bson:"coordinates",json:"coordinates"`
+	Location         GeoJsonTy     `bson:"location",json:"location"`
 	Lat              float64       `bson:"lat" json:"lat"`
 	Long             float64       `bson:"long" json:"long"`
 	CreationDate     time.Time     `bson:"creation_date",json:"creation_date"`
@@ -74,7 +77,7 @@ type readBookmarkTy struct {
 	WVRCategories    []string      `bson:"wvr_categories" json:"wvr_categories"`
 	CustomCategories []string      `bson:"custom_categories" json:"custom_categories"`
 	Keywords         []string      `bson:"keywords" json:"keywords"`
-	Coordinates      []float64     `bson:"coordinates",json:"coordinates"`
+	Coordinates      GeoJsonTy     `bson:"coordinates",json:"coordinates"`
 	Lat              float64       `bson:"lat" json:"lat"`
 	Long             float64       `bson:"long" json:"long"`
 	CreationDate     time.Time     `bson:"creation_date",json:"creation_date"`
@@ -185,13 +188,13 @@ func geospatialhandler(writer http.ResponseWriter, request *http.Request) {
 
 	fmt.Println("latitude:", latitude, " longitude:", longitude)
 	err := bookmarkCollection.Find(bson.M{
-		"coordinates": bson.M{
+		"location": bson.M{
 			"$near": bson.M{
 				"$geometry": bson.M{
 					"type":        "Point",
 					"coordinates": []float64{long64, lat64},
 				},
-				"$minDistance": 5000,
+				"$minDistance": 0,
 				"$maxDistance": 7000,
 			},
 		},
@@ -199,7 +202,15 @@ func geospatialhandler(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-
+	data := dataTy{nil, docs}
+	bytestring, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println(err)
+	}
+	jsonString := string(bytestring)
+	fmt.Printf("%v", jsonString)
+	_, err = fmt.Fprint(writer, jsonString)
+	check(err)
 }
 
 func analyzeImportedBookmarks(writer http.ResponseWriter, request *http.Request) {
@@ -485,9 +496,19 @@ func getAndProcessPage() {
 		go extractPosition(imgUrls)
 
 		coordinates := <-coordinatesChannel
-		docUpdate := bson.M{"$set": bson.M{"lat": coordinates.Lat, "long": coordinates.Long}}
+		geojson := GeoJsonTy{"Point", []float64{coordinates.Long, coordinates.Lat}}
+		docUpdate := bson.M{"$set": bson.M{"location": geojson, "lat": coordinates.Lat, "long": coordinates.Long}}
 		err = bookmarkCollection.Update(docSelector, docUpdate)
 		check(err)
+		// ...createIndex( { location: "2dsphere" } ) existiert nicht im golang API, daher mit EnsureIndex:
+		index := mgo.Index{
+			Key: []string{"$2dsphere:location"},
+			//		Bits: 26,
+		}
+		err = bookmarkCollection.EnsureIndex(index)
+		if err != nil {
+			panic(err)
+		}
 		go classesRecoginition(imgUrls)
 		categories := <-categoriesChannel
 
@@ -620,9 +641,12 @@ func urlAjaxHandler(r http.ResponseWriter, request *http.Request) {
 		dataChannel <- channelData
 		bookmark.UserId = bson.ObjectIdHex(oldCookie.Value)
 		bookmark.URL = Url
+		bookmark.Location = GeoJsonTy{"Point", []float64{0, 0}}
 		err := bookmarkCollection.Insert(bookmark)
 
-		check(err)
+		if err != nil {
+			fmt.Print(err)
+		}
 		err = bookmarkCollection.Find(docSelector).One(&result)
 		docUpdate := bson.M{"$set": bson.M{"creation_date": result.ID.Time()}}
 		err = bookmarkCollection.Update(docSelector, docUpdate)
@@ -634,7 +658,7 @@ func urlAjaxHandler(r http.ResponseWriter, request *http.Request) {
 }
 
 func extractPosition(urls []*url.URL) {
-
+	fmt.Println("extractPÜosition")
 	var coordinates = coordinates{}
 
 	for i, url := range urls {
@@ -667,7 +691,7 @@ func extractPosition(urls []*url.URL) {
 		} else {
 
 			latitude, longitude, _ := x.LatLong()
-
+			fmt.Println(latitude, longitude)
 			coordinates.Lat = latitude
 			coordinates.Long = longitude
 
@@ -804,7 +828,6 @@ func getBookmarksEntries(orderMethod string) dataTy {
 
 	}
 
-	fmt.Printf("%+v\n", docs)
 	return dataTy{AvailableCategories: user.AvailableCategories, Bookmarks: docs}
 }
 func classesRecoginition(urls []*url.URL) {

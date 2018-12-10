@@ -1,9 +1,7 @@
-<!-- ToDo remove border from Divs-->
 
 .center{
     margin: auto;
     width: 25%;
-
     padding: 10px;
 }
 
@@ -22,9 +20,10 @@
 
 }
 .header {
-    border: 1px solid red;
+
     padding: 15px;
 }
+
 .main {
     width: 25%;
     float: left;
@@ -52,11 +51,11 @@ td, th {
 }
 
 tr>th{
-    background-color: #dddddd;
+
 }
 .item1 { grid-area: header; }
 .item2 { grid-area: menu; }
-.item3 { grid-area: main; }
+.item3 { grid-area: main; background-color: aquamarine; }
 .item4 { grid-area: footer; }
 .grid-container {
     display: grid;

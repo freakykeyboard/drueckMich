@@ -34,7 +34,7 @@ let select=document.getElementById("addSelect");
         temp = document.getElementById('selectMenu');
         item = temp.content.querySelector("option");
         a = document.importNode(item, true);
-        a.innerText="KAategorie auswählen";
+        a.innerText="Kategorie auswählen";
         select.appendChild(a);
         for (i in response.available_categories) {
             let category = response.available_categories[i];

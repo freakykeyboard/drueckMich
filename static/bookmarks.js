@@ -170,10 +170,25 @@ function filterBookmarks(){
 
 
 }
+function geospatial(e){
+    e.preventDefault();
+    let form=document.getElementById('geospatial');
+    let formData=new FormData(form);
+
+    console.log('formData',formData);
+    let url='geospatial';
+    let xhr=new XMLHttpRequest();
+    xhr.addEventListener('load',()=>{
+
+    });
+    xhr.open('post',url);
+    xhr.send(formData);
+}
 function sortAfterTime(){
     let url = "setSortProperties";
     let formData = new FormData();
     let xhr = new XMLHttpRequest();
+
     xhr.addEventListener("load", () => {
         console.log('response');
         updateContent(JSON.parse(xhr.responseText))
@@ -182,6 +197,33 @@ function sortAfterTime(){
 
     formData.append('orderBy', "1");
     xhr.send(formData);
+}
+function searchShortReview() {
+    let tbody=document.getElementById('tbody');
+    let tr=tbody.getElementsByTagName('tr');
+    let input=document.getElementById('searchShortReview');
+    let filter=input.value.toUpperCase();
+    console.log('filter',filter)
+    //if index===0 no filter is selected
+
+        for (let i in tr){
+            try{
+                let td=tr[i].getElementsByTagName('td')[1];
+                if (td){
+                    let txtValue=td.textContent||td.innerText;
+                    console.log('txtValue:',txtValue.toUpperCase())
+                    if (txtValue.toUpperCase().indexOf(filter)>-1){
+                        tr[i].style.display="";
+                    } else {
+                        tr[i].style.display="none";
+                    }
+                }
+            }catch (e) {
+
+            }
+
+        }
+
 }
 
 

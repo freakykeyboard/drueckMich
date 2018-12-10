@@ -19,6 +19,7 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -57,6 +58,7 @@ type bookmarkTy struct {
 	WVRCategories    []string      `bson:"wvr_categories" json:"wvr_categories"`
 	CustomCategories []string      `bson:"custom_categories" json:"custom_categories"`
 	Keywords         []string      `bson:"keywords" json:"keywords"`
+	Coordinates      []float64     `bson:"coordinates",json:"coordinates"`
 	Lat              float64       `bson:"lat" json:"lat"`
 	Long             float64       `bson:"long" json:"long"`
 	CreationDate     time.Time     `bson:"creation_date",json:"creation_date"`
@@ -72,6 +74,7 @@ type readBookmarkTy struct {
 	WVRCategories    []string      `bson:"wvr_categories" json:"wvr_categories"`
 	CustomCategories []string      `bson:"custom_categories" json:"custom_categories"`
 	Keywords         []string      `bson:"keywords" json:"keywords"`
+	Coordinates      []float64     `bson:"coordinates",json:"coordinates"`
 	Lat              float64       `bson:"lat" json:"lat"`
 	Long             float64       `bson:"long" json:"long"`
 	CreationDate     time.Time     `bson:"creation_date",json:"creation_date"`
@@ -168,7 +171,35 @@ func main() {
 	http.HandleFunc("/addCategoryToBookmark", addCategoryToBookmark)
 	http.HandleFunc("/removeCategory", removeCategory)
 	http.HandleFunc("/upload", analyzeImportedBookmarks)
+	http.HandleFunc("/geospatial", geospatialhandler)
 	http.ListenAndServe(":4242", nil)
+}
+
+func geospatialhandler(writer http.ResponseWriter, request *http.Request) {
+
+	var docs []readBookmarkTy
+	longitude := request.PostFormValue("longitude")
+	latitude := request.PostFormValue("latitude")
+	long64, _ := strconv.ParseFloat(longitude, 64)
+	lat64, _ := strconv.ParseFloat(latitude, 64)
+
+	fmt.Println("latitude:", latitude, " longitude:", longitude)
+	err := bookmarkCollection.Find(bson.M{
+		"coordinates": bson.M{
+			"$near": bson.M{
+				"$geometry": bson.M{
+					"type":        "Point",
+					"coordinates": []float64{long64, lat64},
+				},
+				"$minDistance": 5000,
+				"$maxDistance": 7000,
+			},
+		},
+	}).All(&docs)
+	if err != nil {
+		panic(err)
+	}
+
 }
 
 func analyzeImportedBookmarks(writer http.ResponseWriter, request *http.Request) {
@@ -183,6 +214,7 @@ func analyzeImportedBookmarks(writer http.ResponseWriter, request *http.Request)
 	for {
 		part, err := reader.NextPart()
 		if err == io.EOF {
+
 			break
 		}
 
@@ -204,7 +236,7 @@ func analyzeImportedBookmarks(writer http.ResponseWriter, request *http.Request)
 			return
 		}
 		//todo is too early file cannot be found ->error
-		go analyzeImport(part.FileName())
+
 	}
 
 }
@@ -519,7 +551,10 @@ func deleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
 	var message messageTy
 	oldCookie, _ := request.Cookie("pressMe")
 	docSelector := bson.M{"_id": bson.ObjectIdHex(oldCookie.Value)}
-	usersCollection.Remove(docSelector)
+	err := usersCollection.Remove(docSelector)
+	check(err)
+	docSelector = bson.M{"user_id": bson.ObjectIdHex(oldCookie.Value)}
+	_, err = bookmarkCollection.RemoveAll(docSelector)
 	message.Message = "Account gelöscht"
 	t.ExecuteTemplate(writer, "login", message)
 }
@@ -747,8 +782,6 @@ func getBookmarksEntries(orderMethod string) dataTy {
 	var docs []readBookmarkTy
 	var user userTy
 
-	fmt.Println("getBookmarkEntries")
-	fmt.Println("orderMethod:", orderMethod)
 	docSelector := bson.M{"user_id": bson.ObjectIdHex(Id)}
 
 	err := bookmarkCollection.Find(docSelector).All(&docs)

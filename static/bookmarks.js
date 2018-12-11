@@ -1,7 +1,6 @@
 'use strict';
 //ToDo hasOwnProperty
 window.addEventListener("load", () => {
-    let geoFormData;
     setInterval(updateBookmarks, 1000 * 5);
 
     function updateBookmarks() {
@@ -12,12 +11,14 @@ window.addEventListener("load", () => {
         xhr.addEventListener("load", () => {
             updateContent(JSON.parse(xhr.responseText));
         });
-        xhr.open("GET", url, true)
+        xhr.open("POST", url, true)
         let form=document.getElementById('geospatial');
         let  geoFormData=new FormData(form);
         if (geoFormData){
+            console.log('geoFromaData',geoFormData)
             xhr.send(geoFormData);
         } else {
+            console.log('no formData')
             xhr.send();
         }
 
@@ -53,7 +54,7 @@ function titleClick() {
 
 }
 function updateContent(data) {
-
+console.log('updateContent',data)
     let tbody;
     let table = document.getElementById("bookmarkTable");
     try {

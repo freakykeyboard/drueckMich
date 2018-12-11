@@ -214,10 +214,6 @@ func geoSpatialQuery(latitude string, longitude string) string {
 		fmt.Println(err)
 	}
 
-	bytestring, err = json.Marshal(docs)
-	if err != nil {
-		fmt.Println(err)
-	}
 	return string(bytestring)
 
 }
@@ -754,7 +750,6 @@ func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
 	orderCookie, _ := request.Cookie(orderCookieName)
 	if request.Method == "POST" {
 
-		request.ParseForm()
 		userName := request.PostFormValue("username")
 		password := request.PostFormValue("password")
 

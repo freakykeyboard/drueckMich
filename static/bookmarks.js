@@ -11,8 +11,19 @@ window.addEventListener("load", () => {
         xhr.addEventListener("load", () => {
             updateContent(JSON.parse(xhr.responseText));
         });
-        xhr.open("GET", url, true);
-        xhr.send();
+        xhr.open("POST", url, true)
+        let form=document.getElementById('geospatial');
+        let  geoFormData=new FormData(form);
+        if (geoFormData){
+            console.log('geoFromaData',geoFormData)
+            xhr.send(geoFormData);
+        } else {
+            console.log('no formData')
+            xhr.send();
+        }
+
+
+
     }
 
 
@@ -33,7 +44,7 @@ function titleClick() {
     let formData = new FormData();
     let xhr = new XMLHttpRequest();
     xhr.addEventListener("load", () => {
-
+        console.log('response')
         updateContent(JSON.parse(xhr.responseText))
     });
     xhr.open("POST", url);
@@ -43,7 +54,6 @@ function titleClick() {
 
 }
 function updateContent(data) {
-
 
     let tbody;
     let table = document.getElementById("bookmarkTable");
@@ -124,7 +134,7 @@ function updateContent(data) {
     filterBookmarks();
 }
 function filterBookmarks(){
-
+    console.log('filterBookmarks');
     let select=document.getElementById("filterBookmarks");
 
     let index=select.selectedIndex;
@@ -172,6 +182,7 @@ function geospatial(e){
     let form=document.getElementById('geospatial');
     let formData=new FormData(form);
 
+    let url='geospatial';
     let xhr=new XMLHttpRequest();
     xhr.addEventListener('load',()=>{
         updateContent(JSON.parse(xhr.responseText))

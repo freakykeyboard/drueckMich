@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="d918e52f-f33d-4ebc-8016-4159b07f9a6a" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/drückMich.go" beforeDir="false" afterPath="$PROJECT_DIR$/drückMich.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/static/addCategoryModal.css" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/static/addCategoryModal.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/addCategoryModal.js" afterDir="false" />
@@ -35,11 +34,25 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/drückMich.go">
           <provider selected="true" editor-type-id="text-editor">
+<<<<<<< Updated upstream
             <state relative-caret-position="313">
               <caret line="210" column="31" lean-forward="true" selection-start-line="210" selection-start-column="31" selection-end-line="210" selection-end-column="31" />
+=======
+            <state relative-caret-position="251">
+              <caret line="503" column="18" selection-start-line="503" selection-start-column="11" selection-end-line="503" selection-end-column="18" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file:///usr/local/go/src/net/http/request.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="160">
+              <caret line="1284" selection-start-line="1284" selection-end-line="1284" />
+>>>>>>> Stashed changes
             </state>
           </provider>
         </entry>
@@ -47,8 +60,13 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/tpl/bookmarks.html">
           <provider selected="true" editor-type-id="text-editor">
+<<<<<<< Updated upstream
             <state relative-caret-position="323">
               <caret line="19" column="73" selection-start-line="19" selection-start-column="73" selection-end-line="19" selection-end-column="73" />
+=======
+            <state relative-caret-position="234">
+              <caret line="186" selection-start-line="186" selection-end-line="186" />
+>>>>>>> Stashed changes
             </state>
           </provider>
         </entry>
@@ -63,10 +81,17 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
+<<<<<<< Updated upstream
         <entry file="file://$PROJECT_DIR$/tpl/addCategoryModal.html">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="119">
               <caret line="7" column="10" lean-forward="true" selection-start-line="7" selection-start-column="10" selection-end-line="7" selection-end-column="10" />
+=======
+        <entry file="file://$PROJECT_DIR$/tpl/bookmarks.html">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="342">
+              <caret line="19" column="138" selection-start-line="19" selection-start-column="138" selection-end-line="19" selection-end-column="138" />
+>>>>>>> Stashed changes
             </state>
           </provider>
         </entry>
@@ -185,6 +210,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -211,7 +237,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -388,8 +413,12 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
+<<<<<<< Updated upstream
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <editor active="true" />
+=======
+    <frame x="-1" y="0" width="1922" height="1053" extended-state="6" />
+>>>>>>> Stashed changes
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.13859275" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -412,7 +441,11 @@
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+<<<<<<< Updated upstream
       <window_info anchor="right" id="Mongo Explorer" order="3" visible="true" weight="0.13646056" />
+=======
+      <window_info anchor="right" id="Mongo Explorer" order="3" visible="true" weight="0.14486487" />
+>>>>>>> Stashed changes
       <window_info anchor="right" id="Database" order="4" weight="0.32942432" />
       <window_info anchor="right" id="Api Debugger" order="5" />
       <window_info active="true" anchor="right" id="Tracking Log Stats" order="6" visible="true" weight="0.21386667" />
@@ -606,7 +639,24 @@
     <entry file="file:///usr/local/go/src/encoding/json/encode.go" />
     <entry file="file://$USER_HOME$/GolandProjects/golangandjavscripttemplate/static/bookmarks.js" />
     <entry file="file:///usr/local/go/src/html/template/template.go" />
+<<<<<<< Updated upstream
     <entry file="file:///usr/local/go/src/net/http/request.go" />
+=======
+    <entry file="file:///usr/local/go/src/net/http/request.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="160">
+          <caret line="1284" selection-start-line="1284" selection-end-line="1284" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/static/modal.css">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="360">
+          <caret line="20" column="16" selection-start-line="20" selection-start-column="16" selection-end-line="20" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+>>>>>>> Stashed changes
     <entry file="file://$PROJECT_DIR$/tpl/newCategoryModal.html">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="162">
@@ -742,8 +792,13 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/tpl/bookmarks.html">
       <provider selected="true" editor-type-id="text-editor">
+<<<<<<< Updated upstream
         <state relative-caret-position="323">
           <caret line="19" column="73" selection-start-line="19" selection-start-column="73" selection-end-line="19" selection-end-column="73" />
+=======
+        <state relative-caret-position="251">
+          <caret line="503" column="18" selection-start-line="503" selection-start-column="11" selection-end-line="503" selection-end-column="18" />
+>>>>>>> Stashed changes
         </state>
       </provider>
     </entry>
@@ -763,8 +818,13 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/../gopkg.in/mgo.v2/session.go">
       <provider selected="true" editor-type-id="text-editor">
+<<<<<<< Updated upstream
         <state relative-caret-position="169">
           <caret line="2435" selection-start-line="2435" selection-end-line="2435" />
+=======
+        <state relative-caret-position="234">
+          <caret line="186" selection-start-line="186" selection-end-line="186" />
+>>>>>>> Stashed changes
         </state>
       </provider>
     </entry>
@@ -784,8 +844,13 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/static/bookmarks.js">
       <provider selected="true" editor-type-id="text-editor">
+<<<<<<< Updated upstream
         <state relative-caret-position="160">
           <caret line="41" column="23" lean-forward="true" selection-start-line="41" selection-start-column="23" selection-end-line="41" selection-end-column="23" />
+=======
+        <state relative-caret-position="342">
+          <caret line="19" column="138" selection-start-line="19" selection-start-column="138" selection-end-line="19" selection-end-column="138" />
+>>>>>>> Stashed changes
         </state>
       </provider>
     </entry>

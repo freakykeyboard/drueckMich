@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded',()=>{
            let url='http://localhost:4242/Url?url='+request.href;
            console.log(url);
            let xhr=new XMLHttpRequest();
-           xhr.open('POST',url);
+           xhr.open('GET',url);
            xhr.addEventListener("load",()=>{
                //ToDo soll eine Fehlerbehandlung implemtiert wenn kein Cookie existiert
               console.log(xhr.responseText)

@@ -18,6 +18,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -172,16 +173,22 @@ func main() {
 	http.HandleFunc("/setSortProperties", sortPropertiesHandler)
 	http.HandleFunc("/addCategoryToBookmark", addCategoryToBookmark)
 	http.HandleFunc("/removeCategory", removeCategory)
+	http.HandleFunc("/geospatial", geoSpatialhandler)
 	http.HandleFunc("/upload", upload)
-	http.HandleFunc("/geospatial", geospatialhandler)
+
 	http.ListenAndServe(":4242", nil)
 }
 
-func geospatialhandler(writer http.ResponseWriter, request *http.Request) {
-
-	var docs []readBookmarkTy
-	longitude := request.PostFormValue("longitude")
+func geoSpatialhandler(writer http.ResponseWriter, request *http.Request) {
 	latitude := request.PostFormValue("latitude")
+	longitude := request.PostFormValue("longitude")
+	docs := geoSpatialQuery(latitude, longitude)
+	fmt.Fprint(writer, docs)
+
+}
+func geoSpatialQuery(latitude string, longitude string) string {
+	var docs []readBookmarkTy
+
 	long64, _ := strconv.ParseFloat(longitude, 64)
 	lat64, _ := strconv.ParseFloat(latitude, 64)
 
@@ -201,15 +208,15 @@ func geospatialhandler(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+
 	data := dataTy{nil, docs}
 	bytestring, err := json.Marshal(data)
 	if err != nil {
 		fmt.Println(err)
 	}
-	jsonString := string(bytestring)
-	fmt.Printf("%v", jsonString)
-	_, err = fmt.Fprint(writer, jsonString)
-	check(err)
+
+	return string(bytestring)
+
 }
 
 func upload(writer http.ResponseWriter, request *http.Request) {
@@ -413,27 +420,35 @@ func getIconFromGrid(writer http.ResponseWriter, request *http.Request) {
 }
 
 func updateHandler(writer http.ResponseWriter, request *http.Request) {
+	//ToDo no cookie
 	var jsonString string
 	cookie, _ := request.Cookie("pressMe")
 	orderMethodCookie, _ := request.Cookie(orderCookieName)
+	latitude := request.PostFormValue("latitude")
+	longitude := request.PostFormValue("longitude")
+	if latitude != "" && longitude != "" {
+		fmt.Fprint(writer, geoSpatialQuery(latitude, longitude))
 
-	Id = cookie.Value
-	if orderMethodCookie != nil {
-		fmt.Println(orderMethodCookie.Value)
-		bytestring, err := json.Marshal(getBookmarksEntries(orderMethodCookie.Value))
-		if err != nil {
-			fmt.Println(err)
-		}
-		jsonString = string(bytestring)
 	} else {
-		bytestring, err := json.Marshal(getBookmarksEntries(""))
-		if err != nil {
-			fmt.Println(err)
+		Id = cookie.Value
+		if orderMethodCookie != nil {
+
+			bytestring, err := json.Marshal(getBookmarksEntries(orderMethodCookie.Value))
+			if err != nil {
+				fmt.Println(err)
+			}
+			jsonString = string(bytestring)
+		} else {
+			bytestring, err := json.Marshal(getBookmarksEntries(""))
+			if err != nil {
+				fmt.Println(err)
+			}
+			jsonString = string(bytestring)
 		}
-		jsonString = string(bytestring)
+
+		fmt.Fprint(writer, jsonString)
 	}
 
-	fmt.Fprint(writer, jsonString)
 }
 
 func getAndProcessPage() {
@@ -610,8 +625,7 @@ func registrateHandler(writer http.ResponseWriter, request *http.Request) {
 
 		var errMessage messageTy
 		errMessage.Message = "Benutzer erstellt"
-		fmt.Printf("%+v\n", errMessage)
-		fmt.Println("")
+
 		err := usersCollection.Insert(userDoc)
 		check(err)
 		err = t.ExecuteTemplate(writer, "registrationModal", errMessage)
@@ -620,8 +634,7 @@ func registrateHandler(writer http.ResponseWriter, request *http.Request) {
 	} else {
 		var errMessage messageTy
 		errMessage.Message = "Benutzer existiert schon"
-		fmt.Printf("%+v\n", errMessage)
-		fmt.Println("")
+
 		err := t.ExecuteTemplate(writer, "registrationModal", errMessage)
 		check(err)
 	}
@@ -811,20 +824,24 @@ func getBookmarksEntries(orderMethod string) dataTy {
 
 	docSelector := bson.M{"user_id": bson.ObjectIdHex(Id)}
 
-	err := usersCollection.Find(bson.M{"_id": bson.ObjectIdHex(Id)}).One(&user)
+	err := bookmarkCollection.Find(docSelector).All(&docs)
+	check(err)
+	err = usersCollection.Find(bson.M{"_id": bson.ObjectIdHex(Id)}).One(&user)
 	check(err)
 	if len(orderMethod) > 0 {
 		parts := strings.Split(orderMethod, "=")
 
 		if parts[1] == "0" {
-			err = bookmarkCollection.Find(docSelector).Sort("title").All(&docs)
-			check(err)
+			sort.Slice(docs, func(i, j int) bool {
+				return docs[i].Title < docs[j].Title
+			})
+
 		} else if parts[1] == "1" {
-			err = bookmarkCollection.Find(docSelector).Sort("creation_date").All(&docs)
+			sort.Slice(docs, func(i, j int) bool {
+				return docs[i].CreationDate.Before(docs[j].CreationDate)
+			})
 		}
 
-	} else {
-		err = bookmarkCollection.Find(docSelector).All(&docs)
 	}
 
 	return dataTy{AvailableCategories: user.AvailableCategories, Bookmarks: docs}

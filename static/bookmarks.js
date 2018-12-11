@@ -18,7 +18,7 @@ window.addEventListener("load", () => {
 
 });
 function uploadFile(e){
-    e.preventDefault()
+    e.preventDefault();
     let form=document.getElementById('uploadBookmark');
     let url='upload';
     let xhr=new XMLHttpRequest();
@@ -33,7 +33,7 @@ function titleClick() {
     let formData = new FormData();
     let xhr = new XMLHttpRequest();
     xhr.addEventListener("load", () => {
-        console.log('response')
+
         updateContent(JSON.parse(xhr.responseText))
     });
     xhr.open("POST", url);
@@ -43,6 +43,7 @@ function titleClick() {
 
 }
 function updateContent(data) {
+
 
     let tbody;
     let table = document.getElementById("bookmarkTable");
@@ -94,11 +95,7 @@ function updateContent(data) {
             temp.querySelector('.url').appendChild(a);
             temp.querySelector('.shortReview').innerText=bookmark.shortReview;
             temp.querySelector('.title').innerText=bookmark.title;
-            for (let j =0;j<bookmark.images.length;j++){
-                let li=document.createElement('li');
-                li.innerText=bookmark.images[j];
-                temp.querySelector('.images').appendChild(li);
-            }
+
             for (let j in bookmark.wvr_categories){
                 let li=document.createElement('li');
                 li.innerText=bookmark.wvr_categories[j];
@@ -123,10 +120,11 @@ function updateContent(data) {
         }
 
     }
+    searchShortReview();
     filterBookmarks();
 }
 function filterBookmarks(){
-    console.log('filterBookmarks');
+
     let select=document.getElementById("filterBookmarks");
 
     let index=select.selectedIndex;
@@ -174,11 +172,8 @@ function geospatial(e){
     let form=document.getElementById('geospatial');
     let formData=new FormData(form);
 
-    console.log('formData',formData);
-    let url='geospatial';
     let xhr=new XMLHttpRequest();
     xhr.addEventListener('load',()=>{
-        console.log('geo response:',JSON.parse(xhr.responseText));
         updateContent(JSON.parse(xhr.responseText))
     });
     xhr.open('post',url);

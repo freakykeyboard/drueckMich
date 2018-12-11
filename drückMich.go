@@ -18,7 +18,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -173,7 +172,7 @@ func main() {
 	http.HandleFunc("/setSortProperties", sortPropertiesHandler)
 	http.HandleFunc("/addCategoryToBookmark", addCategoryToBookmark)
 	http.HandleFunc("/removeCategory", removeCategory)
-	http.HandleFunc("/upload", analyzeImportedBookmarks)
+	http.HandleFunc("/upload", upload)
 	http.HandleFunc("/geospatial", geospatialhandler)
 	http.ListenAndServe(":4242", nil)
 }
@@ -213,7 +212,7 @@ func geospatialhandler(writer http.ResponseWriter, request *http.Request) {
 	check(err)
 }
 
-func analyzeImportedBookmarks(writer http.ResponseWriter, request *http.Request) {
+func upload(writer http.ResponseWriter, request *http.Request) {
 	reader, err := request.MultipartReader()
 
 	if err != nil {
@@ -236,7 +235,7 @@ func analyzeImportedBookmarks(writer http.ResponseWriter, request *http.Request)
 
 		dst, err := os.Create("./files/" + part.FileName())
 		defer dst.Close()
-
+		go analyzeImport(part.FileName())
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -246,9 +245,24 @@ func analyzeImportedBookmarks(writer http.ResponseWriter, request *http.Request)
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		//todo is too early file cannot be found ->error
 
 	}
+
+}
+func analyzeImport(fileName string) {
+	fmt.Println("analyzeImport")
+
+	/*filePath:=path.Join("./files",fileName)
+
+	tempFile,err:=os.Open(filePath)
+	defer tempFile.Close()
+	check(err)
+	byteArrayPage, err := ioutil.ReadAll(tempFile)
+	check(err)
+	docZeiger, err := html.Parse(strings.NewReader(string(byteArrayPage)))
+	if err != nil {
+		fmt.Println(err)
+	}*/
 
 }
 
@@ -399,7 +413,6 @@ func getIconFromGrid(writer http.ResponseWriter, request *http.Request) {
 }
 
 func updateHandler(writer http.ResponseWriter, request *http.Request) {
-	//ToDo no cookie
 	var jsonString string
 	cookie, _ := request.Cookie("pressMe")
 	orderMethodCookie, _ := request.Cookie(orderCookieName)
@@ -422,17 +435,7 @@ func updateHandler(writer http.ResponseWriter, request *http.Request) {
 
 	fmt.Fprint(writer, jsonString)
 }
-func analyzeImport(fileName string) {
-	file, err := os.Open(fileName)
-	check(err)
-	//byteArrayPage, err := ioutil.ReadAll(file)
-	defer file.Close()
-	//docZeiger, err := html.Parse(strings.NewReader(string(byteArrayPage)))
-	if err != nil {
-		fmt.Println(err)
-	}
 
-}
 func getAndProcessPage() {
 	channelData := <-dataChannel
 	docSelector := channelData.Docselector
@@ -808,24 +811,20 @@ func getBookmarksEntries(orderMethod string) dataTy {
 
 	docSelector := bson.M{"user_id": bson.ObjectIdHex(Id)}
 
-	err := bookmarkCollection.Find(docSelector).All(&docs)
-	check(err)
-	err = usersCollection.Find(bson.M{"_id": bson.ObjectIdHex(Id)}).One(&user)
+	err := usersCollection.Find(bson.M{"_id": bson.ObjectIdHex(Id)}).One(&user)
 	check(err)
 	if len(orderMethod) > 0 {
 		parts := strings.Split(orderMethod, "=")
 
 		if parts[1] == "0" {
-			sort.Slice(docs, func(i, j int) bool {
-				return docs[i].Title < docs[j].Title
-			})
-
+			err = bookmarkCollection.Find(docSelector).Sort("title").All(&docs)
+			check(err)
 		} else if parts[1] == "1" {
-			sort.Slice(docs, func(i, j int) bool {
-				return docs[i].CreationDate.Before(docs[j].CreationDate)
-			})
+			err = bookmarkCollection.Find(docSelector).Sort("creation_date").All(&docs)
 		}
 
+	} else {
+		err = bookmarkCollection.Find(docSelector).All(&docs)
 	}
 
 	return dataTy{AvailableCategories: user.AvailableCategories, Bookmarks: docs}

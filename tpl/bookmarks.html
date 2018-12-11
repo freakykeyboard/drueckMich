@@ -55,7 +55,6 @@
                         <span class="tooltiptext">Zum Sortieren klicken</span>
                     </div>
                 </th>
-                <th>Images</th>
                 <th>Icon/Logo</th>
                 <th>WVR-Kategorien</th>
                 <th>Kategorien</th>
@@ -72,13 +71,6 @@
                     <td class="url"><a href={{.URL}} target="_blank">{{.URL}}</a></td>
                     <td class="shortReview">{{.ShortReview}}</td>
                     <td class="title">{{.Title}}</td>
-                    <td>
-                        <ul class="images">
-                            {{range .Images}}
-                            <li>{{.}}</li>
-                            {{end}}
-                        </ul>
-                    </td>
                     <td class="icon">
                         <img class="imgIcon" id="icon" src="/gridGetIcon?fileName={{.IconName}}">
                     </td>
@@ -119,11 +111,7 @@
             <td class="url"></td>
             <td class="shortReview"></td>
             <td class="title"></td>
-            <td>
-                <ul class="images">
 
-                </ul>
-            </td>
             <td class="icon"><img class="imgIcon" id="icon" src="/gridGetIcon?fileName="></td>
             <td class=>
                 <ul class="wvrCategories">

@@ -1,18 +1,28 @@
 'use strict';
 //ToDo hasOwnProperty
 window.addEventListener("load", () => {
-
+    let geoFormData;
     setInterval(updateBookmarks, 1000 * 5);
 
     function updateBookmarks() {
         let xhr = new XMLHttpRequest();
         const url = "update";
 
+
         xhr.addEventListener("load", () => {
             updateContent(JSON.parse(xhr.responseText));
         });
-        xhr.open("GET", url, true);
-        xhr.send();
+        xhr.open("GET", url, true)
+        let form=document.getElementById('geospatial');
+        let  geoFormData=new FormData(form);
+        if (geoFormData){
+            xhr.send(geoFormData);
+        } else {
+            xhr.send();
+        }
+
+
+
     }
 
 
@@ -172,9 +182,8 @@ function filterBookmarks(){
 function geospatial(e){
     e.preventDefault();
     let form=document.getElementById('geospatial');
-    let formData=new FormData(form);
+   let  geoFormData=new FormData(form);
 
-    console.log('formData',formData);
     let url='geospatial';
     let xhr=new XMLHttpRequest();
     xhr.addEventListener('load',()=>{
@@ -182,7 +191,7 @@ function geospatial(e){
         updateContent(JSON.parse(xhr.responseText))
     });
     xhr.open('post',url);
-    xhr.send(formData);
+    xhr.send(geoFormData);
 }
 function sortAfterTime(){
     let url = "setSortProperties";

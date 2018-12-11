@@ -16,8 +16,13 @@
         </div>
         <div class="Column">
             <form method="post" action="geospatial" id="geospatial">
+<<<<<<< Updated upstream
                 <input type="text" name="longitude"  placeholder="Longitude">
                 <input type="text" name="latitude"  placeholder="Latitude" >
+=======
+                <input type="text" name="longitude" pattern="[0-9]{2}[.][0-9]{4}"title="mus dem Format:54.1234 entsprechne" placeholder="Longitude">
+                <input type="text" name="latitude"  pattern="[0-9]{2}[.][0-9]{4}"title="mus dem Format:54.1234 entsprechne" placeholder="Latitude" >
+>>>>>>> Stashed changes
                 <input type="submit" onclick="geospatial(event)">
             </form>
 

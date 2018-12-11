@@ -174,15 +174,20 @@ func main() {
 	http.HandleFunc("/addCategoryToBookmark", addCategoryToBookmark)
 	http.HandleFunc("/removeCategory", removeCategory)
 	http.HandleFunc("/upload", analyzeImportedBookmarks)
-	http.HandleFunc("/geospatial", geospatialhandler)
+	http.HandleFunc("/geospatial", geoSpatialhandler)
 	http.ListenAndServe(":4242", nil)
 }
 
-func geospatialhandler(writer http.ResponseWriter, request *http.Request) {
-
-	var docs []readBookmarkTy
-	longitude := request.PostFormValue("longitude")
+func geoSpatialhandler(writer http.ResponseWriter, request *http.Request) {
 	latitude := request.PostFormValue("latitude")
+	longitude := request.PostFormValue("longitude")
+	docs := geoSpatialQuery(latitude, longitude)
+	fmt.Fprint(writer, docs)
+
+}
+func geoSpatialQuery(latitude string, longitude string) string {
+	var docs []readBookmarkTy
+
 	long64, _ := strconv.ParseFloat(longitude, 64)
 	lat64, _ := strconv.ParseFloat(latitude, 64)
 
@@ -202,15 +207,19 @@ func geospatialhandler(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		panic(err)
 	}
+
 	data := dataTy{nil, docs}
 	bytestring, err := json.Marshal(data)
 	if err != nil {
 		fmt.Println(err)
 	}
-	jsonString := string(bytestring)
-	fmt.Printf("%v", jsonString)
-	_, err = fmt.Fprint(writer, jsonString)
-	check(err)
+
+	bytestring, err = json.Marshal(docs)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return string(bytestring)
+
 }
 
 func analyzeImportedBookmarks(writer http.ResponseWriter, request *http.Request) {
@@ -403,24 +412,31 @@ func updateHandler(writer http.ResponseWriter, request *http.Request) {
 	var jsonString string
 	cookie, _ := request.Cookie("pressMe")
 	orderMethodCookie, _ := request.Cookie(orderCookieName)
+	latitude := request.PostFormValue("latitude")
+	longitude := request.PostFormValue("longitude")
+	if latitude != "" && longitude != "" {
+		fmt.Fprint(writer, geoSpatialQuery(latitude, longitude))
 
-	Id = cookie.Value
-	if orderMethodCookie != nil {
-		fmt.Println(orderMethodCookie.Value)
-		bytestring, err := json.Marshal(getBookmarksEntries(orderMethodCookie.Value))
-		if err != nil {
-			fmt.Println(err)
-		}
-		jsonString = string(bytestring)
 	} else {
-		bytestring, err := json.Marshal(getBookmarksEntries(""))
-		if err != nil {
-			fmt.Println(err)
+		Id = cookie.Value
+		if orderMethodCookie != nil {
+
+			bytestring, err := json.Marshal(getBookmarksEntries(orderMethodCookie.Value))
+			if err != nil {
+				fmt.Println(err)
+			}
+			jsonString = string(bytestring)
+		} else {
+			bytestring, err := json.Marshal(getBookmarksEntries(""))
+			if err != nil {
+				fmt.Println(err)
+			}
+			jsonString = string(bytestring)
 		}
-		jsonString = string(bytestring)
+
+		fmt.Fprint(writer, jsonString)
 	}
 
-	fmt.Fprint(writer, jsonString)
 }
 func analyzeImport(fileName string) {
 	file, err := os.Open(fileName)
@@ -607,8 +623,7 @@ func registrateHandler(writer http.ResponseWriter, request *http.Request) {
 
 		var errMessage messageTy
 		errMessage.Message = "Benutzer erstellt"
-		fmt.Printf("%+v\n", errMessage)
-		fmt.Println("")
+
 		err := usersCollection.Insert(userDoc)
 		check(err)
 		err = t.ExecuteTemplate(writer, "registrationModal", errMessage)
@@ -617,8 +632,7 @@ func registrateHandler(writer http.ResponseWriter, request *http.Request) {
 	} else {
 		var errMessage messageTy
 		errMessage.Message = "Benutzer existiert schon"
-		fmt.Printf("%+v\n", errMessage)
-		fmt.Println("")
+
 		err := t.ExecuteTemplate(writer, "registrationModal", errMessage)
 		check(err)
 	}
@@ -658,10 +672,12 @@ func urlAjaxHandler(r http.ResponseWriter, request *http.Request) {
 }
 
 func extractPosition(urls []*url.URL) {
+
 	fmt.Println("extractPÜosition")
 	var coordinates = coordinates{}
 
 	for i, url := range urls {
+		fmt.Println("url.String()", url.String())
 		res, err := http.Get(url.String())
 		if err != nil {
 			fmt.Println(err.Error())
@@ -694,7 +710,7 @@ func extractPosition(urls []*url.URL) {
 			fmt.Println(latitude, longitude)
 			coordinates.Lat = latitude
 			coordinates.Long = longitude
-
+			fmt.Println("coordinates:", coordinates)
 			coordinatesChannel <- coordinates
 			return
 		}

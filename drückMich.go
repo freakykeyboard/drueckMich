@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/rwcarlsen/goexif/exif"
@@ -91,32 +92,26 @@ type dataTy struct {
 	AvailableCategories []string         `json:"available_categories"`
 	Bookmarks           []readBookmarkTy `json:"bookmarks"`
 }
-type processUrlFinished struct {
-	Url        []*url.URL
-	Attributes attributesTy
-}
+
 type attributesTy struct {
 	imgSrcs     map[int]string
 	title       string
 	description string
 	keywords    []string
 }
+type dataFromImport struct {
+}
 type channelData struct {
 	Url         string
 	Docselector bson.M
 }
-type CategoryTy struct {
-	Category string
-}
+
 type categories struct {
 	Categories []string
 }
-type cookieTy struct {
-	OrderMethod, Orderby string `json:"order_method"`
-	customOrder          bool   `json:"custom_order"`
-}
-type formDataTy struct {
-	Orderby string
+type importData struct {
+	Url  string
+	Icon string
 }
 
 var attributes attributesTy
@@ -257,11 +252,12 @@ func upload(writer http.ResponseWriter, request *http.Request) {
 
 }
 func analyzeImport(fileName string) {
+
 	fmt.Println("analyzeImport")
 
-	/*filePath:=path.Join("./files",fileName)
+	filePath := path.Join("./files", fileName)
 
-	tempFile,err:=os.Open(filePath)
+	tempFile, err := os.Open(filePath)
 	defer tempFile.Close()
 	check(err)
 	byteArrayPage, err := ioutil.ReadAll(tempFile)
@@ -269,8 +265,42 @@ func analyzeImport(fileName string) {
 	docZeiger, err := html.Parse(strings.NewReader(string(byteArrayPage)))
 	if err != nil {
 		fmt.Println(err)
-	}*/
+	}
+	attributes = attributesTy{}
+	attributes.imgSrcs = make(map[int]string)
+	data := getUrl(docZeiger)
+	res, err := http.Get(data.Url)
+	check(err)
 
+}
+
+//ToDo os.GetWd()
+func getUrl(node *html.Node) importData {
+	data := importData{}
+	if node.Type == html.ElementNode {
+
+		switch node.Data {
+
+		case "a":
+			fmt.Println("case a")
+			fmt.Println(node.Data)
+			for _, attr := range node.Attr {
+				fmt.Println("attr", attr.Key)
+				if attr.Key == "href" {
+					data.Url = attr.Val
+				} else if attr.Key == "icon" {
+
+					data.Icon = attr.Val
+				}
+			}
+		}
+
+	}
+	for child := node.FirstChild; child != nil; child = child.NextSibling {
+
+		getUrl(child)
+	}
+	return data
 }
 
 func removeCategory(writer http.ResponseWriter, request *http.Request) {
@@ -539,7 +569,6 @@ func getAndProcessPage() {
 }
 
 func getAllAttributes(node *html.Node) attributesTy {
-
 	if node.Type == html.ElementNode {
 		switch node.Data {
 		case "img":

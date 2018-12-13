@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/rwcarlsen/goexif/exif"
@@ -114,6 +113,7 @@ type importData struct {
 	Icon string
 }
 
+var data importData
 var attributes attributesTy
 var bookmarks bookmarksTy
 var usersCollection *mgo.Collection
@@ -215,6 +215,9 @@ func geoSpatialQuery(latitude string, longitude string) string {
 }
 
 func upload(writer http.ResponseWriter, request *http.Request) {
+	cookie, err := request.Cookie(sessionCookieName)
+	check(err)
+	id := bson.ObjectIdHex(cookie.Value)
 	reader, err := request.MultipartReader()
 
 	if err != nil {
@@ -237,7 +240,7 @@ func upload(writer http.ResponseWriter, request *http.Request) {
 
 		dst, err := os.Create("./files/" + part.FileName())
 		defer dst.Close()
-		go analyzeImport(part.FileName())
+		go analyzeImport(part.FileName(), id)
 		if err != nil {
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
 			return
@@ -251,8 +254,9 @@ func upload(writer http.ResponseWriter, request *http.Request) {
 	}
 
 }
-func analyzeImport(fileName string) {
-
+func analyzeImport(fileName string, id bson.ObjectId) {
+	var bookmark bookmarkTy
+	bookmark.UserId = id
 	fmt.Println("analyzeImport")
 
 	filePath := path.Join("./files", fileName)
@@ -266,17 +270,22 @@ func analyzeImport(fileName string) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	attributes = attributesTy{}
-	attributes.imgSrcs = make(map[int]string)
-	data := getUrl(docZeiger)
-	res, err := http.Get(data.Url)
+
+	data = getUrl(docZeiger)
+	bookmark.URL = data.Url
+	//bookmark.IconName=data.Icon
+	err = bookmarkCollection.Insert(bookmark)
 	check(err)
+	_, err = http.Get(data.Url)
+	if err != nil {
+		fmt.Println("error:", err.Error())
+	}
 
 }
 
 //ToDo os.GetWd()
 func getUrl(node *html.Node) importData {
-	data := importData{}
+
 	if node.Type == html.ElementNode {
 
 		switch node.Data {

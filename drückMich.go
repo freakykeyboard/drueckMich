@@ -21,6 +21,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -97,9 +98,9 @@ type attributesTy struct {
 	title       string
 	description string
 	keywords    []string
+	Mux         sync.Mutex
 }
-type dataFromImport struct {
-}
+
 type channelData struct {
 	Url         string
 	Docselector bson.M
@@ -109,8 +110,7 @@ type categories struct {
 	Categories []string
 }
 type importData struct {
-	Url  string
-	Icon string
+	Bookmarks []bookmarkTy
 }
 
 var data importData
@@ -124,6 +124,7 @@ var tempImageGridFs *mgo.GridFS
 var coordinatesChannel = make(chan coordinates, 2)
 var dataChannel = make(chan channelData, 2)
 var categoriesChannel = make(chan categories)
+var bookmarkChannel = make(chan bookmarkTy)
 var service *visualrecognitionv3.VisualRecognitionV3
 var serviceErr error
 var Id string
@@ -133,7 +134,6 @@ var sessionCookieName string
 func main() {
 	byteArray, _ := ioutil.ReadFile("apiKey")
 	apiKey := string(byteArray)
-	attributes.imgSrcs = make(map[int]string)
 	sessionCookieName = "pressMe"
 	orderCookieName = "orderMethod"
 
@@ -264,42 +264,61 @@ func analyzeImport(fileName string, id bson.ObjectId) {
 	tempFile, err := os.Open(filePath)
 	defer tempFile.Close()
 	check(err)
-	byteArrayPage, err := ioutil.ReadAll(tempFile)
-	check(err)
-	docZeiger, err := html.Parse(strings.NewReader(string(byteArrayPage)))
-	if err != nil {
-		fmt.Println(err)
-	}
+	z := html.NewTokenizer(tempFile)
 
-	data = getUrl(docZeiger)
-	bookmark.URL = data.Url
+	getUrl(z)
+
+	bookmark.Location = GeoJsonTy{"Point", []float64{0, 0}}
 	//bookmark.IconName=data.Icon
 	err = bookmarkCollection.Insert(bookmark)
 	check(err)
-	_, err = http.Get(data.Url)
-	if err != nil {
-		fmt.Println("error:", err.Error())
-	}
 
 }
 
 //ToDo os.GetWd()
-func getUrl(node *html.Node) importData {
+func getUrl(z *html.Tokenizer) error {
+	depth := 0
+	for {
+		tt := z.Next()
+		fmt.Println("tt", tt)
+		switch tt {
 
-	if node.Type == html.ElementNode {
+		case html.ErrorToken:
+			return z.Err()
+		case html.TextToken:
+			if depth > 0 {
+				// emitBytes should copy the []byte it receives,
+				// if it doesn't process it immediately.
+				fmt.Println(string(z.Text()))
+			}
+		case html.StartTagToken, html.EndTagToken:
+			tn, _ := z.TagName()
+			if len(tn) == 1 && tn[0] == 'a' {
+				if tt == html.StartTagToken {
+					depth++
+				} else {
+					depth--
+				}
+			}
+		}
+	}
+	/*if node.Type == html.ElementNode {
 
 		switch node.Data {
-
+		case "dt":
+			bookmarkChannel<-bookmark
+			bookmark=bookmarkTy{}
+			break
 		case "a":
 			fmt.Println("case a")
 			fmt.Println(node.Data)
 			for _, attr := range node.Attr {
 				fmt.Println("attr", attr.Key)
 				if attr.Key == "href" {
-					data.Url = attr.Val
+					bookmark.URL = attr.Val
 				} else if attr.Key == "icon" {
 
-					data.Icon = attr.Val
+					bookmark.IconName= attr.Val
 				}
 			}
 		}
@@ -308,8 +327,8 @@ func getUrl(node *html.Node) importData {
 	for child := node.FirstChild; child != nil; child = child.NextSibling {
 
 		getUrl(child)
-	}
-	return data
+	}*/
+
 }
 
 func removeCategory(writer http.ResponseWriter, request *http.Request) {
@@ -388,7 +407,7 @@ func addCategoryToBookmark(writer http.ResponseWriter, request *http.Request) {
 }
 
 func sortPropertiesHandler(writer http.ResponseWriter, request *http.Request) {
-	//ToDo
+
 	var newCookie http.Cookie
 
 	orderBy := request.PostFormValue("orderBy")
@@ -519,7 +538,10 @@ func getAndProcessPage() {
 		if err != nil {
 			fmt.Println(err)
 		}
-		attributes = attributesTy{}
+
+		//Lock of global struct type
+		attributes.Mux.Lock()
+		attributes.description, attributes.title, attributes.keywords = "", "", []string{}
 		attributes.imgSrcs = make(map[int]string)
 		attributes = getAllAttributes(docZeiger)
 
@@ -532,9 +554,6 @@ func getAndProcessPage() {
 		if err != nil {
 			fmt.Println(err)
 		}
-
-		// Nun alle URLs aus der Map im Kontext der pageUrl u in
-		// absolute URLS konvertieren:
 
 		for _, wert := range attributes.imgSrcs {
 			absURL, err := u.Parse(wert)
@@ -550,11 +569,14 @@ func getAndProcessPage() {
 			check(err)
 
 		}
+		docUpdate := bson.M{"$set": bson.M{"keywords": attributes.keywords, "title": attributes.title, "icon": attributes.title, "shortReview": attributes.description}}
+		err = bookmarkCollection.Update(docSelector, docUpdate)
+		attributes.Mux.Unlock()
 		go extractPosition(imgUrls)
 
 		coordinates := <-coordinatesChannel
 		geojson := GeoJsonTy{"Point", []float64{coordinates.Long, coordinates.Lat}}
-		docUpdate := bson.M{"$set": bson.M{"location": geojson, "lat": coordinates.Lat, "long": coordinates.Long}}
+		docUpdate = bson.M{"$set": bson.M{"location": geojson, "lat": coordinates.Lat, "long": coordinates.Long}}
 		err = bookmarkCollection.Update(docSelector, docUpdate)
 		check(err)
 		// ...createIndex( { location: "2dsphere" } ) existiert nicht im golang API, daher mit EnsureIndex:
@@ -712,7 +734,6 @@ func urlAjaxHandler(r http.ResponseWriter, request *http.Request) {
 }
 
 func extractPosition(urls []*url.URL) {
-	fmt.Println("extractPÜosition")
 	var coordinates = coordinates{}
 
 	for i, url := range urls {
@@ -786,7 +807,6 @@ func getAndSaveFavicon(Url string, title string) {
 
 }
 func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
-	//ToDo change example
 	sessionCookie, _ := request.Cookie("pressMe")
 	var users []readUserTy
 	orderCookie, _ := request.Cookie(orderCookieName)
@@ -887,6 +907,8 @@ func getBookmarksEntries(orderMethod string) dataTy {
 func classesRecoginition(urls []*url.URL) {
 	var categories = categories{}
 	for _, url := range urls {
+		res, _ := http.Get(url.String())
+		fmt.Println(res.Header)
 		// Optionen für die Klassifizierung festlegen:
 		classifyOptions := service.NewClassifyOptions()
 		classifyOptions.URL = core.StringPtr(url.String())

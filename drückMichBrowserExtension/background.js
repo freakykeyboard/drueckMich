@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded',()=>{
            let xhr=new XMLHttpRequest();
            xhr.open('GET',url);
            xhr.addEventListener("load",()=>{
-               //ToDo soll eine Fehlerbehandlung implemtiert wenn kein Cookie existiert
+
               console.log(xhr.responseText)
            });
            xhr.setRequestHeader("Content-type", 'application/x-www-form-urlencoded');

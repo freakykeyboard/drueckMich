@@ -130,8 +130,15 @@ function updateContent(data) {
         }
 
     }
-    searchShortReview();
-    filterBookmarks();
+    //toDo decide which function should be executed
+    if ( document.getElementById("searchShortReview").innerText.length===0){
+        searchShortReview();
+    }
+    let select=document.getElementById("filterBookmarks");
+    if (select.selectedIndex!==0){
+        filterBookmarks();
+    }
+
 }
 function filterBookmarks(){
     console.log('filterBookmarks');
@@ -146,7 +153,7 @@ function filterBookmarks(){
     if (index!==0){
         for (let i in tr){
             try{
-                let td=tr[i].getElementsByTagName('td')[6];
+                let td=tr[i].getElementsByTagName('td')[5];
                 if (td){
                     let txtValue=td.textContent||td.innerText;
                     if (txtValue.toUpperCase().indexOf(filter)>-1){
@@ -163,7 +170,7 @@ function filterBookmarks(){
     }else {
         for (let i in tr){
             try{
-                let td=tr[i].getElementsByTagName('td')[6];
+                let td=tr[i].getElementsByTagName('td')[5];
                 if (td){
                         tr[i].style.display="";
 

@@ -110,10 +110,14 @@ type categories struct {
 	Categories []string
 }
 type importData struct {
-	Bookmarks []bookmarkTy
+	Url   string
+	Icon  string
+	Title string
 }
 
-var data importData
+var data []importData
+var aTagCounter int
+var textTagCounter int
 var attributes attributesTy
 var bookmarks bookmarksTy
 var usersCollection *mgo.Collection
@@ -255,8 +259,7 @@ func upload(writer http.ResponseWriter, request *http.Request) {
 
 }
 func analyzeImport(fileName string, id bson.ObjectId) {
-	var bookmark bookmarkTy
-	bookmark.UserId = id
+
 	fmt.Println("analyzeImport")
 
 	filePath := path.Join("./files", fileName)
@@ -264,71 +267,67 @@ func analyzeImport(fileName string, id bson.ObjectId) {
 	tempFile, err := os.Open(filePath)
 	defer tempFile.Close()
 	check(err)
-	z := html.NewTokenizer(tempFile)
-
-	getUrl(z)
-
-	bookmark.Location = GeoJsonTy{"Point", []float64{0, 0}}
-	//bookmark.IconName=data.Icon
-	err = bookmarkCollection.Insert(bookmark)
+	byteArrayPage, err := ioutil.ReadAll(tempFile)
 	check(err)
+	docZeiger, err := html.Parse(strings.NewReader(string(byteArrayPage)))
+	if err != nil {
+		fmt.Println(err)
+	}
+	aTagCounter = 0
+	textTagCounter = 0
+	data = getUrl(docZeiger)
+	for i := range data {
+		var bookmark bookmarkTy
+		bookmark.UserId = id
+		bookmark.Location = GeoJsonTy{"Point", []float64{0, 0}}
+		bookmark.URL = data[i].Url
+		bookmark.Title = data[i].Title
+		err = bookmarkCollection.Insert(bookmark)
+		check(err)
+		docSelector := bson.M{"user_id": id, "url": data[i].Url}
+		var channelData = channelData{
+			Url:         data[i].Url,
+			Docselector: docSelector,
+		}
+		go getAndProcessPage()
+		dataChannel <- channelData
+
+	}
 
 }
 
 //ToDo os.GetWd()
-func getUrl(z *html.Tokenizer) error {
-	depth := 0
-	for {
-		tt := z.Next()
-		fmt.Println("tt", tt)
-		switch tt {
+func getUrl(node *html.Node) []importData {
 
-		case html.ErrorToken:
-			return z.Err()
-		case html.TextToken:
-			if depth > 0 {
-				// emitBytes should copy the []byte it receives,
-				// if it doesn't process it immediately.
-				fmt.Println(string(z.Text()))
-			}
-		case html.StartTagToken, html.EndTagToken:
-			tn, _ := z.TagName()
-			if len(tn) == 1 && tn[0] == 'a' {
-				if tt == html.StartTagToken {
-					depth++
-				} else {
-					depth--
-				}
-			}
-		}
-	}
-	/*if node.Type == html.ElementNode {
+	if node.Type == html.ElementNode {
 
 		switch node.Data {
-		case "dt":
-			bookmarkChannel<-bookmark
-			bookmark=bookmarkTy{}
-			break
+
 		case "a":
-			fmt.Println("case a")
-			fmt.Println(node.Data)
+			fmt.Println("a")
+			data = append(data, importData{})
+
+			data[aTagCounter].Title = node.LastChild.Data
 			for _, attr := range node.Attr {
-				fmt.Println("attr", attr.Key)
 				if attr.Key == "href" {
-					bookmark.URL = attr.Val
+					data[aTagCounter].Url = attr.Val
 				} else if attr.Key == "icon" {
 
-					bookmark.IconName= attr.Val
+					data[aTagCounter].Icon = attr.Val
 				}
 			}
+			aTagCounter++
+
 		}
+
+	} else if node.Type == html.TextNode {
 
 	}
 	for child := node.FirstChild; child != nil; child = child.NextSibling {
 
 		getUrl(child)
-	}*/
-
+	}
+	return data
 }
 
 func removeCategory(writer http.ResponseWriter, request *http.Request) {

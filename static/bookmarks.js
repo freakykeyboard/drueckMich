@@ -99,8 +99,8 @@ function updateContent(data) {
             let temp=document.getElementById('bookmarkRow').content.cloneNode(true);
 
             let a=document.createElement('a');
-            a.setAttribute('target','_blank')
-            a.innerText=bookmark.url
+            a.setAttribute('target','_blank');
+            a.innerText=bookmark.title;
             a.setAttribute('href',bookmark.url);
             temp.querySelector('.url').appendChild(a);
             temp.querySelector('.shortReview').innerText=bookmark.shortReview;

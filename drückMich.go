@@ -18,7 +18,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -545,6 +544,32 @@ func getAndProcessPage() {
 		attributes = getAllAttributes(docZeiger)
 
 		go getAndSaveFavicon(pageUrl, attributes.title)
+		fmt.Println("getAndSaveFavicon")
+		faviconUrl := "https://www.google.com/s2/favicons?domain=" + pageUrl
+		res, err := http.Get(faviconUrl)
+		if err != nil {
+			fmt.Println(err)
+
+		} else {
+			mimeType := res.Header.Get("Content-Type")
+			gridFile, err := favIconsGridFs.Create(attributes.title)
+			gridFile.SetContentType(mimeType)
+
+			if err != nil {
+				fmt.Println("error while creating:", err)
+			}
+
+			_, err = io.Copy(gridFile, res.Body)
+
+			if err != nil {
+				fmt.Println("error whily copy", err)
+			}
+			err = gridFile.Close()
+			if err != nil {
+				fmt.Println("error close")
+				fmt.Println(err)
+			}
+		}
 		// Alle relativen SRC-URLs in absolute URLs wandeln:
 		// https://golang.org/pkg/net/url/#example_URL_Parse
 
@@ -777,32 +802,6 @@ func extractPosition(urls []*url.URL) {
 }
 
 func getAndSaveFavicon(Url string, title string) {
-	fmt.Println("getAndSaveFavicon")
-	faviconUrl := "https://www.google.com/s2/favicons?domain=" + Url
-	res, err := http.Get(faviconUrl)
-	if err != nil {
-		fmt.Println(err)
-
-	} else {
-		mimeType := res.Header.Get("Content-Type")
-		gridFile, err := favIconsGridFs.Create(title)
-		gridFile.SetContentType(mimeType)
-
-		if err != nil {
-			fmt.Println("error while creating:", err)
-		}
-
-		_, err = io.Copy(gridFile, res.Body)
-
-		if err != nil {
-			fmt.Println("error whily copy", err)
-		}
-		err = gridFile.Close()
-		if err != nil {
-			fmt.Println("error close")
-			fmt.Println(err)
-		}
-	}
 
 }
 func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
@@ -881,24 +880,22 @@ func getBookmarksEntries(orderMethod string) dataTy {
 
 	docSelector := bson.M{"user_id": bson.ObjectIdHex(Id)}
 
-	err := bookmarkCollection.Find(docSelector).All(&docs)
-	check(err)
-	err = usersCollection.Find(bson.M{"_id": bson.ObjectIdHex(Id)}).One(&user)
+	err := usersCollection.Find(bson.M{"_id": bson.ObjectIdHex(Id)}).One(&user)
 	check(err)
 	if len(orderMethod) > 0 {
 		parts := strings.Split(orderMethod, "=")
 
 		if parts[1] == "0" {
-			sort.Slice(docs, func(i, j int) bool {
-				return docs[i].Title < docs[j].Title
-			})
+			err = bookmarkCollection.Find(docSelector).Sort("title").All(&docs)
 
 		} else if parts[1] == "1" {
-			sort.Slice(docs, func(i, j int) bool {
-				return docs[i].CreationDate.Before(docs[j].CreationDate)
-			})
+
+			err = bookmarkCollection.Find(docSelector).Sort("creation_date").All(&docs)
+
 		}
 
+	} else {
+		bookmarkCollection.Find(docSelector).All(&docs)
 	}
 
 	return dataTy{AvailableCategories: user.AvailableCategories, Bookmarks: docs}

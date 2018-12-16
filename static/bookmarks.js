@@ -15,10 +15,10 @@ window.addEventListener("load", () => {
         let form=document.getElementById('geospatial');
         let  geoFormData=new FormData(form);
         if (geoFormData){
-            console.log('geoFromaData',geoFormData)
+            console.log('geoFromaData',geoFormData);
             xhr.send(geoFormData);
         } else {
-            console.log('no formData')
+            console.log('no formData');
             xhr.send();
         }
 
@@ -100,7 +100,7 @@ function updateContent(data) {
 
             let a=document.createElement('a');
             a.setAttribute('target','_blank');
-            a.innerText=bookmark.title;
+            a.innerText=bookmark.url;
             a.setAttribute('href',bookmark.url);
             temp.querySelector('.url').appendChild(a);
             temp.querySelector('.shortReview').innerText=bookmark.shortReview;

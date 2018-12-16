@@ -1,21 +1,5 @@
 
 
-let sendButton=document.getElementById("registrate");
-sendButton.addEventListener("click",(e)=>{
-    e.preventDefault()
-    let formData=new FormData();
-    let userName=document.getElementById("userName").value;
-    let password=document.getElementById("password").value;
-    formData.append("username",userName);
-    formData.append("password",password);
-    let xhr=new XMLHttpRequest();
-    xhr.addEventListener("load",()=>{
-        console.log(xhr.responseText)
-    });
-    xhr.open('POST',"registrate");
-    xhr.send(formData);
-    registrationModal.style.display = "none";
-});
 // Get the modal
 let registrationModal = document.getElementById('registrationModal');
 

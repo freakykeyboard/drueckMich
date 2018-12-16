@@ -26,7 +26,7 @@ import (
 
 var t = template.Must(template.ParseFiles(filepath.Join("./", "tpl", "head.html"),
 	filepath.Join("./", "tpl", "login.html"), filepath.Join("./", "tpl", "bookmarks.html"),
-	filepath.Join("./", "tpl", "end.html"), filepath.Join("./", "tpl", "registrate.html"),
+	filepath.Join("./", "tpl", "end.html"),
 	filepath.Join("./", "tpl", "newCategoryModal.html"), filepath.Join("./", "tpl", "removeCategoryModal.html"),
 	filepath.Join("./", "tpl", "registrationModal.html"), filepath.Join("./", "tpl", "addCategoryModal.html")))
 
@@ -46,11 +46,10 @@ type GeoJsonTy struct {
 	Coordinates []float64 `json:"coordinates",bson:"coordinates"`
 }
 type messageTy struct {
-	Message string
+	ShowModal bool
+	Message   string
 }
-type bookmarksTy struct {
-	Bookmarks []bookmarkTy
-}
+
 type bookmarkTy struct {
 	UserId           bson.ObjectId `json:"user_id" bson:"user_id"`
 	URL              string        `bson:"url" json:"url"`
@@ -106,6 +105,7 @@ type channelData struct {
 }
 
 type categories struct {
+	Url        string
 	Categories []string
 }
 type importData struct {
@@ -116,9 +116,7 @@ type importData struct {
 
 var data []importData
 var aTagCounter int
-var textTagCounter int
 var attributes attributesTy
-var bookmarks bookmarksTy
 var usersCollection *mgo.Collection
 var bookmarkCollection *mgo.Collection
 var favIconsGridFs *mgo.GridFS
@@ -127,7 +125,6 @@ var tempImageGridFs *mgo.GridFS
 var coordinatesChannel = make(chan coordinates, 2)
 var dataChannel = make(chan channelData, 2)
 var categoriesChannel = make(chan categories)
-var bookmarkChannel = make(chan bookmarkTy)
 var service *visualrecognitionv3.VisualRecognitionV3
 var serviceErr error
 var Id string
@@ -176,44 +173,80 @@ func main() {
 
 	http.ListenAndServe(":4242", nil)
 }
+func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
+	sessionCookie, _ := request.Cookie("pressMe")
+	var user readUserTy
+	orderCookie, _ := request.Cookie(orderCookieName)
+	if request.Method == "POST" {
 
+		request.ParseForm()
+		userName := request.PostFormValue("username")
+		password := request.PostFormValue("password")
+
+		exits, _ := usersCollection.Find(bson.M{"username": userName, "password": password}).Count()
+		//user exists?
+		if exits == 1 {
+			err := usersCollection.Find(bson.M{"username": userName, "password": password}).One(&user)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			if err != nil {
+				log.Fatal(err)
+			}
+			Id = user.ID.Hex()
+
+			setCookie := http.Cookie{
+				Name:  sessionCookieName,
+				Value: Id,
+				Path:  "/",
+			}
+			http.SetCookie(writer, &setCookie)
+			exits, err = bookmarkCollection.Find(bson.M{"user_id": user.ID}).Count()
+			check(err)
+			if exits >= 1 {
+
+				err = t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries(""))
+				if err != nil {
+					log.Fatal(err)
+				}
+			} else {
+				err = t.ExecuteTemplate(writer, "bookmarks", nil)
+			}
+
+		} else {
+			var errMessage messageTy
+			errMessage.Message = "Benutzer existiert nicht"
+			t.ExecuteTemplate(writer, "login", errMessage)
+		}
+	} else if request.Method == "GET" {
+		if sessionCookie != nil {
+
+			exits, err := bookmarkCollection.Find(bson.M{"user_id": bson.ObjectIdHex(sessionCookie.Value)}).Count()
+			check(err)
+			if exits >= 1 {
+				Id = sessionCookie.Value
+				if orderCookie != nil {
+					t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries(orderCookie.Value))
+				} else {
+					t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries(""))
+				}
+			} else {
+				t.ExecuteTemplate(writer, "bookmarks", nil)
+			}
+
+		} else {
+			t.ExecuteTemplate(writer, "login", nil)
+		}
+
+	}
+
+}
 func geoSpatialhandler(writer http.ResponseWriter, request *http.Request) {
 	latitude := request.PostFormValue("latitude")
 	longitude := request.PostFormValue("longitude")
 	docs := geoSpatialQuery(latitude, longitude)
 	fmt.Fprint(writer, docs)
-
-}
-func geoSpatialQuery(latitude string, longitude string) string {
-	var docs []readBookmarkTy
-
-	long64, _ := strconv.ParseFloat(longitude, 64)
-	lat64, _ := strconv.ParseFloat(latitude, 64)
-
-	fmt.Println("latitude:", latitude, " longitude:", longitude)
-	err := bookmarkCollection.Find(bson.M{
-		"location": bson.M{
-			"$near": bson.M{
-				"$geometry": bson.M{
-					"type":        "Point",
-					"coordinates": []float64{long64, lat64},
-				},
-				"$minDistance": 0,
-				"$maxDistance": 7000,
-			},
-		},
-	}).All(&docs)
-	if err != nil {
-		panic(err)
-	}
-
-	data := dataTy{nil, docs}
-	bytestring, err := json.Marshal(data)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	return string(bytestring)
 
 }
 
@@ -257,78 +290,37 @@ func upload(writer http.ResponseWriter, request *http.Request) {
 	}
 
 }
-func analyzeImport(fileName string, id bson.ObjectId) {
 
-	fmt.Println("analyzeImport")
-
-	filePath := path.Join("./files", fileName)
-
-	tempFile, err := os.Open(filePath)
-	defer tempFile.Close()
+func addCategoryToBookmark(writer http.ResponseWriter, request *http.Request) {
+	var jsonString string
+	orderMethodCookie, _ := request.Cookie(orderCookieName)
+	cookie, err := request.Cookie(sessionCookieName)
 	check(err)
-	byteArrayPage, err := ioutil.ReadAll(tempFile)
+	id := cookie.Value
+	url := request.PostFormValue("url")
+	category := request.PostFormValue("category")
+	docSelector := bson.M{"user_id": bson.ObjectIdHex(id), "url": url}
+	docUpdate := bson.M{"$addToSet": bson.M{"custom_categories": category}}
+	err = bookmarkCollection.Update(docSelector, docUpdate)
 	check(err)
-	docZeiger, err := html.Parse(strings.NewReader(string(byteArrayPage)))
-	if err != nil {
-		fmt.Println(err)
-	}
-	aTagCounter = 0
-	textTagCounter = 0
-	data = getUrl(docZeiger)
-	for i := range data {
-		var bookmark bookmarkTy
-		bookmark.UserId = id
-		bookmark.Location = GeoJsonTy{"Point", []float64{0, 0}}
-		bookmark.URL = data[i].Url
-		bookmark.Title = data[i].Title
-		err = bookmarkCollection.Insert(bookmark)
-		check(err)
-		docSelector := bson.M{"user_id": id, "url": data[i].Url}
-		var channelData = channelData{
-			Url:         data[i].Url,
-			Docselector: docSelector,
+	if orderMethodCookie != nil {
+		fmt.Println(orderMethodCookie.Value)
+		bytestring, err := json.Marshal(getBookmarksEntries(orderMethodCookie.Value))
+		if err != nil {
+			fmt.Println(err)
 		}
-		go getAndProcessPage()
-		dataChannel <- channelData
-
+		jsonString = string(bytestring)
+	} else {
+		bytestring, err := json.Marshal(getBookmarksEntries(""))
+		if err != nil {
+			fmt.Println(err)
+		}
+		jsonString = string(bytestring)
 	}
+
+	fmt.Fprint(writer, jsonString)
 
 }
-
-//ToDo os.GetWd()
-func getUrl(node *html.Node) []importData {
-
-	if node.Type == html.ElementNode {
-
-		switch node.Data {
-
-		case "a":
-			fmt.Println("a")
-			data = append(data, importData{})
-
-			data[aTagCounter].Title = node.LastChild.Data
-			for _, attr := range node.Attr {
-				if attr.Key == "href" {
-					data[aTagCounter].Url = attr.Val
-				} else if attr.Key == "icon" {
-
-					data[aTagCounter].Icon = attr.Val
-				}
-			}
-			aTagCounter++
-
-		}
-
-	} else if node.Type == html.TextNode {
-
-	}
-	for child := node.FirstChild; child != nil; child = child.NextSibling {
-
-		getUrl(child)
-	}
-	return data
-}
-
 func removeCategory(writer http.ResponseWriter, request *http.Request) {
 	var bookmark bookmarkTy
 	var jsonString string
@@ -372,38 +364,6 @@ func removeCategory(writer http.ResponseWriter, request *http.Request) {
 
 	fmt.Fprint(writer, jsonString)
 }
-
-func addCategoryToBookmark(writer http.ResponseWriter, request *http.Request) {
-	var jsonString string
-	orderMethodCookie, _ := request.Cookie(orderCookieName)
-	cookie, err := request.Cookie(sessionCookieName)
-	check(err)
-	id := cookie.Value
-	url := request.PostFormValue("url")
-	category := request.PostFormValue("category")
-	docSelector := bson.M{"user_id": bson.ObjectIdHex(id), "url": url}
-	docUpdate := bson.M{"$addToSet": bson.M{"custom_categories": category}}
-	err = bookmarkCollection.Update(docSelector, docUpdate)
-	check(err)
-	if orderMethodCookie != nil {
-		fmt.Println(orderMethodCookie.Value)
-		bytestring, err := json.Marshal(getBookmarksEntries(orderMethodCookie.Value))
-		if err != nil {
-			fmt.Println(err)
-		}
-		jsonString = string(bytestring)
-	} else {
-		bytestring, err := json.Marshal(getBookmarksEntries(""))
-		if err != nil {
-			fmt.Println(err)
-		}
-		jsonString = string(bytestring)
-	}
-
-	fmt.Fprint(writer, jsonString)
-
-}
-
 func sortPropertiesHandler(writer http.ResponseWriter, request *http.Request) {
 
 	var newCookie http.Cookie
@@ -428,37 +388,6 @@ func sortPropertiesHandler(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprint(writer, jsonString)
 }
 
-func newCategoryHandler(writer http.ResponseWriter, request *http.Request) {
-	fmt.Println("newCategory")
-	cookie, err := request.Cookie("pressMe")
-	check(err)
-	var Id string
-	if cookie != nil {
-		catName := request.PostFormValue("catName")
-		Id = cookie.Value
-		docSelector := bson.M{"_id": bson.ObjectIdHex(Id)}
-		docUpdate := bson.M{"$addToSet": bson.M{"available_categories": catName}}
-		err = usersCollection.Update(docSelector, docUpdate)
-		check(err)
-		fmt.Fprint(writer, "sucess")
-	} else {
-
-	}
-}
-func check_ResponseToHTTP(err error, writer http.ResponseWriter) {
-	if err != nil {
-		fmt.Fprintln(writer, err)
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-//todo no app crash when cookie exits but no entry in db
 func getIconFromGrid(writer http.ResponseWriter, request *http.Request) {
 	iconName := request.URL.Query().Get("fileName")
 
@@ -471,16 +400,15 @@ func getIconFromGrid(writer http.ResponseWriter, request *http.Request) {
 
 			writer.Header().Add("Content-Type", img.ContentType())
 			_, err = io.Copy(writer, img)
-			check_ResponseToHTTP(err, writer)
+
 			err = img.Close()
-			check_ResponseToHTTP(err, writer)
+
 		}
 	}
 
 }
 
 func updateHandler(writer http.ResponseWriter, request *http.Request) {
-	//ToDo no cookie
 	var jsonString string
 	cookie, _ := request.Cookie("pressMe")
 	orderMethodCookie, _ := request.Cookie(orderCookieName)
@@ -511,116 +439,110 @@ func updateHandler(writer http.ResponseWriter, request *http.Request) {
 
 }
 
-func getAndProcessPage() {
-	channelData := <-dataChannel
-	docSelector := channelData.Docselector
-	pageUrl := channelData.Url
-
-	var imgUrls []*url.URL
-
-	// HTTP-GET Request senden:
-	//because of timeouts
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-	res, err := client.Get(pageUrl)
-	if err != nil {
-		fmt.Println("zeile 341")
-		fmt.Println("err.Error()", err.Error())
-
+func newCategoryHandler(writer http.ResponseWriter, request *http.Request) {
+	fmt.Println("newCategory")
+	cookie, err := request.Cookie("pressMe")
+	check(err)
+	var Id string
+	if cookie != nil {
+		catName := request.PostFormValue("catName")
+		Id = cookie.Value
+		docSelector := bson.M{"_id": bson.ObjectIdHex(Id)}
+		docUpdate := bson.M{"$addToSet": bson.M{"available_categories": catName}}
+		err = usersCollection.Update(docSelector, docUpdate)
+		check(err)
+		fmt.Fprint(writer, "sucess")
 	} else {
-		byteArrayPage, err := ioutil.ReadAll(res.Body)
-		res.Body.Close()
-		if err != nil {
-			fmt.Println(err)
-		}
-		// Empfangene Seite parsen, in doc-tree wandeln:
-		docZeiger, err := html.Parse(strings.NewReader(string(byteArrayPage)))
-		if err != nil {
-			fmt.Println(err)
-		}
 
-		//Lock of global struct type
-		attributes.Mux.Lock()
-		attributes.description, attributes.title, attributes.keywords = "", "", []string{}
-		attributes.imgSrcs = make(map[int]string)
-		attributes = getAllAttributes(docZeiger)
+	}
+}
 
-		faviconUrl := "https://www.google.com/s2/favicons?domain=" + pageUrl
-		res, err := http.Get(faviconUrl)
-		if err != nil {
-			fmt.Println(err)
+func deleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
+	var message messageTy
+	oldCookie, _ := request.Cookie("pressMe")
+	docSelector := bson.M{"_id": bson.ObjectIdHex(oldCookie.Value)}
+	err := usersCollection.Remove(docSelector)
+	check(err)
+	docSelector = bson.M{"user_id": bson.ObjectIdHex(oldCookie.Value)}
+	_, err = bookmarkCollection.RemoveAll(docSelector)
+	message.Message = "Account gelöscht"
+	t.ExecuteTemplate(writer, "login", message)
+}
+func logoutHandler(writer http.ResponseWriter, request *http.Request) {
+	oldCookie, _ := request.Cookie("pressMe")
 
-		} else {
-			mimeType := res.Header.Get("Content-Type")
-			gridFile, err := favIconsGridFs.Create(attributes.title)
-			gridFile.SetContentType(mimeType)
+	docSelector := bson.M{"_id": bson.ObjectIdHex(oldCookie.Value)}
+	docUpdate := bson.M{"$set": bson.M{"is_logged_in": false}}
+	err := usersCollection.Update(docSelector, docUpdate)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	newCookie := http.Cookie{
+		Name:   sessionCookieName,
+		MaxAge: -1,
+	}
+	http.SetCookie(writer, &newCookie)
+	t.ExecuteTemplate(writer, "login", nil)
+}
+func urlAjaxHandler(_ http.ResponseWriter, request *http.Request) {
+	fmt.Println("urlAjaxHandler")
+	var bookmark bookmarkTy
+	var result readBookmarkTy
+	Url := request.URL.Query().Get("url")
+	oldCookie, _ := request.Cookie("pressMe")
+	if oldCookie != nil {
+		docSelector := bson.M{"user_id": bson.ObjectIdHex(oldCookie.Value), "url": Url}
+		exits, _ := bookmarkCollection.Find(docSelector).Count()
+
+		if exits == 0 {
+			bookmark.UserId = bson.ObjectIdHex(oldCookie.Value)
+			bookmark.URL = Url
+			bookmark.Location = GeoJsonTy{"Point", []float64{0, 0}}
+			err := bookmarkCollection.Insert(bookmark)
 
 			if err != nil {
-				fmt.Println("error while creating:", err)
+				fmt.Print(err)
 			}
 
-			_, err = io.Copy(gridFile, res.Body)
-
-			if err != nil {
-				fmt.Println("error whily copy", err)
+			var channelData = channelData{
+				Url:         Url,
+				Docselector: docSelector,
 			}
-			err = gridFile.Close()
-			if err != nil {
-				fmt.Println("error close")
-				fmt.Println(err)
-			}
-		}
-		// Alle relativen SRC-URLs in absolute URLs wandeln:
-		// https://golang.org/pkg/net/url/#example_URL_Parse
+			go getAndProcessPage()
+			dataChannel <- channelData
 
-		// Zunächst die pageUrl (raw-url) in eine URL-structure wandeln:
-		u, err := url.Parse(pageUrl)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		for _, wert := range attributes.imgSrcs {
-			absURL, err := u.Parse(wert)
-			if err != nil {
-				fmt.Println(err)
-			}
-
-			imgUrls = append(imgUrls, absURL)
-
-			docUpdate := bson.M{"$addToSet": bson.M{"images": absURL.String()}}
+			err = bookmarkCollection.Find(docSelector).One(&result)
+			docUpdate := bson.M{"$set": bson.M{"creation_date": result.ID.Time()}}
 			err = bookmarkCollection.Update(docSelector, docUpdate)
 			check(err)
-
+		} else {
+			//do Nothing
 		}
-		docUpdate := bson.M{"$set": bson.M{"keywords": attributes.keywords, "title": attributes.title, "icon": attributes.title, "shortReview": attributes.description}}
-		err = bookmarkCollection.Update(docSelector, docUpdate)
-		attributes.Mux.Unlock()
-		go extractPosition(imgUrls)
-
-		coordinates := <-coordinatesChannel
-		geojson := GeoJsonTy{"Point", []float64{coordinates.Long, coordinates.Lat}}
-		docUpdate = bson.M{"$set": bson.M{"location": geojson, "lat": coordinates.Lat, "long": coordinates.Long}}
-		err = bookmarkCollection.Update(docSelector, docUpdate)
-		check(err)
-		// ...createIndex( { location: "2dsphere" } ) existiert nicht im golang API, daher mit EnsureIndex:
-		index := mgo.Index{
-			Key: []string{"$2dsphere:location"},
-			//		Bits: 26,
-		}
-		err = bookmarkCollection.EnsureIndex(index)
-		if err != nil {
-			panic(err)
-		}
-		go classesRecoginition(imgUrls)
-		categories := <-categoriesChannel
-
-		docUpdate = bson.M{"$addToSet": bson.M{"wvr_categories": bson.M{"$each": categories.Categories}}}
-
-		err = bookmarkCollection.Update(docSelector, docUpdate)
-		check(err)
 	}
 
+}
+func registrateHandler(writer http.ResponseWriter, request *http.Request) {
+	userName := request.PostFormValue("username")
+	password := request.PostFormValue("password")
+	userExists, _ := usersCollection.Find(bson.M{"username": userName}).Count()
+	if userExists == 0 {
+		userDoc := userTy{userName, password, nil}
+
+		var errMessage messageTy
+		errMessage.ShowModal = true
+		errMessage.Message = "Benutzer erstellt"
+
+		err := usersCollection.Insert(userDoc)
+		check(err)
+		t.ExecuteTemplate(writer, "login", errMessage)
+	} else {
+		var errMessage messageTy
+		errMessage.Message = "Benutzer existiert schon"
+		errMessage.ShowModal = true
+		t.ExecuteTemplate(writer, "login", errMessage)
+
+	}
 }
 
 func getAllAttributes(node *html.Node) attributesTy {
@@ -669,94 +591,124 @@ func getAllAttributes(node *html.Node) attributesTy {
 	}
 	return attributes
 }
-
-func deleteAccountHandler(writer http.ResponseWriter, request *http.Request) {
-	var message messageTy
-	oldCookie, _ := request.Cookie("pressMe")
-	docSelector := bson.M{"_id": bson.ObjectIdHex(oldCookie.Value)}
-	err := usersCollection.Remove(docSelector)
-	check(err)
-	docSelector = bson.M{"user_id": bson.ObjectIdHex(oldCookie.Value)}
-	_, err = bookmarkCollection.RemoveAll(docSelector)
-	message.Message = "Account gelöscht"
-	t.ExecuteTemplate(writer, "login", message)
-}
-func logoutHandler(writer http.ResponseWriter, request *http.Request) {
-	oldCookie, _ := request.Cookie("pressMe")
-
-	docSelector := bson.M{"_id": bson.ObjectIdHex(oldCookie.Value)}
-	docUpdate := bson.M{"$set": bson.M{"is_logged_in": false}}
-	err := usersCollection.Update(docSelector, docUpdate)
+func check(err error) {
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 	}
-
-	newCookie := http.Cookie{
-		Name:   sessionCookieName,
-		MaxAge: -1,
-	}
-	http.SetCookie(writer, &newCookie)
-	t.ExecuteTemplate(writer, "login", nil)
 }
 
-func registrateHandler(writer http.ResponseWriter, request *http.Request) {
+func getAndProcessPage() {
+	channelData := <-dataChannel
+	docSelector := channelData.Docselector
+	pageUrl := channelData.Url
 
-	userName := request.PostFormValue("username")
-	password := request.PostFormValue("password")
-	userExists, _ := usersCollection.Find(bson.M{"username": userName}).Count()
-	if userExists == 0 {
-		userDoc := userTy{userName, password, nil}
+	var imgUrls []*url.URL
 
-		var errMessage messageTy
-		errMessage.Message = "Benutzer erstellt"
-
-		err := usersCollection.Insert(userDoc)
-		check(err)
-		err = t.ExecuteTemplate(writer, "registrationModal", errMessage)
-		check(err)
+	// HTTP-GET Request senden:
+	//because of timeouts
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	res, err := client.Get(pageUrl)
+	if err != nil {
+		fmt.Println("zeile 341")
+		fmt.Println("err.Error()", err.Error())
 
 	} else {
-		var errMessage messageTy
-		errMessage.Message = "Benutzer existiert schon"
-
-		err := t.ExecuteTemplate(writer, "registrationModal", errMessage)
-		check(err)
-	}
-}
-
-func urlAjaxHandler(r http.ResponseWriter, request *http.Request) {
-	//ToDo check if entry alread exists
-	fmt.Println("urlAjaxHandler")
-	var bookmark bookmarkTy
-	var result readBookmarkTy
-	Url := request.URL.Query().Get("url")
-	oldCookie, _ := request.Cookie("pressMe")
-	if oldCookie != nil {
-		docSelector := bson.M{"user_id": bson.ObjectIdHex(oldCookie.Value), "url": Url}
-		var channelData = channelData{
-			Url:         Url,
-			Docselector: docSelector,
-		}
-		go getAndProcessPage()
-		dataChannel <- channelData
-		bookmark.UserId = bson.ObjectIdHex(oldCookie.Value)
-		bookmark.URL = Url
-		bookmark.Location = GeoJsonTy{"Point", []float64{0, 0}}
-		err := bookmarkCollection.Insert(bookmark)
-
+		byteArrayPage, err := ioutil.ReadAll(res.Body)
+		res.Body.Close()
 		if err != nil {
-			fmt.Print(err)
+			fmt.Println(err)
 		}
-		err = bookmarkCollection.Find(docSelector).One(&result)
-		docUpdate := bson.M{"$set": bson.M{"creation_date": result.ID.Time()}}
+		// Empfangene Seite parsen, in doc-tree wandeln:
+		docZeiger, err := html.Parse(strings.NewReader(string(byteArrayPage)))
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		//Lock of global struct type
+		attributes.Mux.Lock()
+		attributes.description, attributes.title, attributes.keywords = "", "", []string{}
+		attributes.imgSrcs = make(map[int]string)
+		attributes = getAllAttributes(docZeiger)
+
+		// Alle relativen SRC-URLs in absolute URLs wandeln:
+		// https://golang.org/pkg/net/url/#example_URL_Parse
+
+		// Zunächst die pageUrl (raw-url) in eine URL-structure wandeln:
+		u, err := url.Parse(pageUrl)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		for _, wert := range attributes.imgSrcs {
+			absURL, err := u.Parse(wert)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			imgUrls = append(imgUrls, absURL)
+
+			docUpdate := bson.M{"$addToSet": bson.M{"images": absURL.String()}}
+			err = bookmarkCollection.Update(docSelector, docUpdate)
+			check(err)
+
+		}
+		docUpdate := bson.M{"$set": bson.M{"keywords": attributes.keywords, "title": attributes.title, "icon": attributes.title, "shortReview": attributes.description}}
+		err = bookmarkCollection.Update(docSelector, docUpdate)
+		attributes.Mux.Unlock()
+		faviconUrl := "https://www.google.com/s2/favicons?domain=" + pageUrl
+		res, err := http.Get(faviconUrl)
+		if err != nil {
+			fmt.Println(err)
+
+		} else {
+			mimeType := res.Header.Get("Content-Type")
+			gridFile, err := favIconsGridFs.Create(attributes.title)
+			gridFile.SetContentType(mimeType)
+
+			if err != nil {
+				fmt.Println("error while creating:", err)
+			}
+
+			_, err = io.Copy(gridFile, res.Body)
+
+			if err != nil {
+				fmt.Println("error whily copy", err)
+			}
+			err = gridFile.Close()
+			if err != nil {
+				fmt.Println("error close")
+				fmt.Println(err)
+			}
+		}
+		go extractPosition(imgUrls)
+		coordinates := <-coordinatesChannel
+
+		geojson := GeoJsonTy{"Point", []float64{coordinates.Long, coordinates.Lat}}
+		docUpdate = bson.M{"$set": bson.M{"location": geojson, "lat": coordinates.Lat, "long": coordinates.Long}}
 		err = bookmarkCollection.Update(docSelector, docUpdate)
 		check(err)
-	} else {
-		//do Nothing
+		// ...createIndex( { location: "2dsphere" } ) existiert nicht im golang API, daher mit EnsureIndex:
+		index := mgo.Index{
+			Key: []string{"$2dsphere:location"},
+			//		Bits: 26,
+		}
+		err = bookmarkCollection.EnsureIndex(index)
+		if err != nil {
+			panic(err)
+		}
+
+		go classesRecoginition(imgUrls)
+		categories := <-categoriesChannel
+
+		docUpdate = bson.M{"$addToSet": bson.M{"wvr_categories": bson.M{"$each": categories.Categories}}}
+
+		err = bookmarkCollection.Update(docSelector, docUpdate)
+		check(err)
 	}
 
 }
-
 func extractPosition(urls []*url.URL) {
 	var coordinates = coordinates{}
 
@@ -766,21 +718,7 @@ func extractPosition(urls []*url.URL) {
 			fmt.Println(err.Error())
 		}
 
-		file, err := tempImageGridFs.Create("tmp")
-		_, err = io.Copy(file, res.Body)
-		check(err)
-		err = file.Close()
-		result := struct{ INode int }{}
-		err = file.GetMeta(&result)
-		if err != nil {
-			panic(err)
-		}
-
-		check(err)
-		file, err = tempImageGridFs.Open("tmp")
-		check(err)
-
-		x, err := exif.Decode(file)
+		x, err := exif.Decode(res.Body)
 		if err != nil {
 
 			if (len(urls) - 1) == i {
@@ -801,79 +739,6 @@ func extractPosition(urls []*url.URL) {
 	}
 }
 
-func getAndSaveFavicon(Url string, title string) {
-
-}
-func pressMeHandler(writer http.ResponseWriter, request *http.Request) {
-	sessionCookie, _ := request.Cookie("pressMe")
-	var users []readUserTy
-	orderCookie, _ := request.Cookie(orderCookieName)
-	if request.Method == "POST" {
-
-		request.ParseForm()
-		userName := request.PostFormValue("username")
-		password := request.PostFormValue("password")
-
-		exits, _ := usersCollection.Find(bson.M{"username": userName, "password": password}).Count()
-		//user exists?
-		if exits == 1 {
-			//toDo use One
-			err := usersCollection.Find(bson.M{"username": userName, "password": password}).All(&users)
-			if err != nil {
-				fmt.Println(err)
-			}
-
-			if err != nil {
-				log.Fatal(err)
-			}
-			Id = users[0].ID.Hex()
-
-			setCookie := http.Cookie{
-				Name:  sessionCookieName,
-				Value: Id,
-				Path:  "/",
-			}
-			http.SetCookie(writer, &setCookie)
-			exits, err = bookmarkCollection.Find(bson.M{"user_id": users[0].ID}).Count()
-			check(err)
-			if exits >= 1 {
-
-				err = t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries(""))
-				if err != nil {
-					log.Fatal(err)
-				}
-			} else {
-				err = t.ExecuteTemplate(writer, "bookmarks", nil)
-			}
-
-		} else {
-			var errMessage messageTy
-			errMessage.Message = "Benutzer existiert nicht"
-			t.ExecuteTemplate(writer, "login", errMessage)
-		}
-	} else if request.Method == "GET" {
-		if sessionCookie != nil {
-
-			exits, err := bookmarkCollection.Find(bson.M{"user_id": bson.ObjectIdHex(sessionCookie.Value)}).Count()
-			check(err)
-			if exits >= 1 {
-				Id = sessionCookie.Value
-				if orderCookie != nil {
-					t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries(orderCookie.Value))
-				} else {
-					t.ExecuteTemplate(writer, "bookmarks", getBookmarksEntries(""))
-				}
-			} else {
-				t.ExecuteTemplate(writer, "bookmarks", nil)
-			}
-
-		} else {
-			t.ExecuteTemplate(writer, "login", nil)
-		}
-
-	}
-
-}
 func getBookmarksEntries(orderMethod string) dataTy {
 	var docs []readBookmarkTy
 	var user userTy
@@ -942,6 +807,8 @@ func classesRecoginition(urls []*url.URL) {
 				for _, wert := range classes {
 
 					categories.Categories = append(categories.Categories, *wert.ClassName)
+					fmt.Println("urlOfImageCategoryFound:", url.String())
+					categories.Url = url.String()
 				}
 			}
 			categoriesChannel <- categories
@@ -949,5 +816,107 @@ func classesRecoginition(urls []*url.URL) {
 		}
 
 	}
+
+}
+func analyzeImport(fileName string, id bson.ObjectId) {
+
+	fmt.Println("analyzeImport")
+
+	filePath := path.Join("./files", fileName)
+
+	tempFile, err := os.Open(filePath)
+	defer tempFile.Close()
+	check(err)
+	byteArrayPage, err := ioutil.ReadAll(tempFile)
+	check(err)
+	docZeiger, err := html.Parse(strings.NewReader(string(byteArrayPage)))
+	if err != nil {
+		fmt.Println(err)
+	}
+	aTagCounter = 0
+	data = getUrl(docZeiger)
+	for i := range data {
+		var bookmark bookmarkTy
+		bookmark.UserId = id
+		bookmark.Location = GeoJsonTy{"Point", []float64{0, 0}}
+		bookmark.URL = data[i].Url
+		bookmark.Title = data[i].Title
+		err = bookmarkCollection.Insert(bookmark)
+		check(err)
+		docSelector := bson.M{"user_id": id, "url": data[i].Url}
+		var channelData = channelData{
+			Url:         data[i].Url,
+			Docselector: docSelector,
+		}
+		go getAndProcessPage()
+		dataChannel <- channelData
+
+	}
+
+}
+
+func getUrl(node *html.Node) []importData {
+
+	if node.Type == html.ElementNode {
+
+		switch node.Data {
+
+		case "a":
+			fmt.Println("a")
+			data = append(data, importData{})
+
+			data[aTagCounter].Title = node.LastChild.Data
+			for _, attr := range node.Attr {
+				if attr.Key == "href" {
+					data[aTagCounter].Url = attr.Val
+				} else if attr.Key == "icon" {
+
+					data[aTagCounter].Icon = attr.Val
+				}
+			}
+			aTagCounter++
+
+		}
+
+	} else if node.Type == html.TextNode {
+
+	}
+	for child := node.FirstChild; child != nil; child = child.NextSibling {
+
+		getUrl(child)
+	}
+	return data
+}
+
+func geoSpatialQuery(latitude string, longitude string) string {
+	var docs []readBookmarkTy
+
+	long64, _ := strconv.ParseFloat(longitude, 64)
+	lat64, _ := strconv.ParseFloat(latitude, 64)
+
+	fmt.Println("latitude:", latitude, " longitude:", longitude)
+	err := bookmarkCollection.Find(bson.M{
+		"location": bson.M{
+			"$near": bson.M{
+				"$geometry": bson.M{
+					"type":        "Point",
+					"coordinates": []float64{long64, lat64},
+				},
+				"$minDistance": 0,
+				"$maxDistance": 7000,
+			},
+		},
+	}).All(&docs)
+	if err != nil {
+		panic(err)
+	}
+
+	data := dataTy{nil, docs}
+	bytestring, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return string(bytestring)
 
 }

@@ -1,6 +1,5 @@
 'use strict';
-//ToDo create a javascript cookie to identify the incoming url and send it to the server?
-//ToDo change " to '
+
 document.addEventListener('DOMContentLoaded',()=>{
    //browser action button handler
    chrome.browserAction.onClicked.addListener((tab)=>{
@@ -18,16 +17,19 @@ document.addEventListener('DOMContentLoaded',()=>{
        if (request.message==="sendHref"){
 
 
-           let url='http://localhost:4242/Url?url='+request.href;
-           console.log(url);
+           let url='http://localhost:4242/Url';
+           let encodedeUrl=encodeURIComponent(request.href);
+           let jsonString=JSON.stringify({url:encodedeUrl});
            let xhr=new XMLHttpRequest();
-           xhr.open('GET',url);
+           let formData=new FormData;
+           formData.append('href',jsonString);
+           xhr.open('POST',url);
            xhr.addEventListener("load",()=>{
 
               console.log(xhr.responseText)
            });
            xhr.setRequestHeader("Content-type", 'application/x-www-form-urlencoded');
-           xhr.send();
+           xhr.send(formData);
 
            // Neuen Tab mit urlNeuerTab öffnen. Falls diese Url bereits in einem Tab geöffnet ist,
            // diesen Tab aktivieren und neu laden:

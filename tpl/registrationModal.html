@@ -15,14 +15,14 @@
                 <h2>neuen Benutzer registrieren</h2>
             </div>
             <div class="modal-body">
-                <form method="post" action="">
+                <form method="post" action="registrate">
                     <label>Benutzername:</label>
-                    <input type="text" name="userName" id="userName" required>
+                    <input type="text" name="username" required>
                     <br>
                     <label>Passwort:</label>
-                    <input type="password" name="password" id="password" required>
+                    <input type="password" name="password" required>
                     <br>
-                    <input type="button" value="registrate" id="registrate" name="submit">
+                    <input type="submit" value="registrate" name="submit">
                 </form>
                 <p>{{.Message}}</p>
             </div>

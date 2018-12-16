@@ -1,5 +1,4 @@
 'use strict';
-//ToDo hasOwnProperty
 window.addEventListener("load", () => {
 
     setInterval(updateBookmarks, 1000 * 5);
@@ -11,14 +10,14 @@ window.addEventListener("load", () => {
         xhr.addEventListener("load", () => {
             updateContent(JSON.parse(xhr.responseText));
         });
-        xhr.open("POST", url, true)
+        xhr.open("POST", url, true);
+        //immer wenn Koordianten eingeben FormData senden
         let form=document.getElementById('geospatial');
         let  geoFormData=new FormData(form);
         if (geoFormData){
-            console.log('geoFromaData',geoFormData);
+
             xhr.send(geoFormData);
         } else {
-            console.log('no formData');
             xhr.send();
         }
 
@@ -39,12 +38,11 @@ function uploadFile(e){
     xhr.open('POST',url);
     xhr.send(new FormData(form));
 }
-function titleClick() {
+function sortAfterTitle() {
     let url = "setSortProperties";
     let formData = new FormData();
     let xhr = new XMLHttpRequest();
     xhr.addEventListener("load", () => {
-        console.log('response')
         updateContent(JSON.parse(xhr.responseText))
     });
     xhr.open("POST", url);
@@ -70,7 +68,7 @@ function updateContent(data) {
     } catch (e) {
 
     }
-    if (data.available_categories){
+    if (data.hasOwnProperty('available_categories')){
         let select=document.getElementById('filterBookmarks');
         let index=select.selectedIndex;
         while (select.firstChild.nextSibling) {
@@ -92,7 +90,7 @@ function updateContent(data) {
 
         select.selectedIndex=index;
     }
-    if (data.bookmarks) {
+    if (data.hasOwnProperty('bookmarks')) {
         for (let i = 0; i < data.bookmarks.length; i++) {
             let bookmark=data.bookmarks[i];
 
@@ -100,10 +98,11 @@ function updateContent(data) {
 
             let a=document.createElement('a');
             a.setAttribute('target','_blank');
-            a.innerText=bookmark.url;
+            a.innerText=bookmark.title;
             a.setAttribute('href',bookmark.url);
             temp.querySelector('.url').appendChild(a);
             temp.querySelector('.shortReview').innerText=bookmark.shortReview;
+            console.log('bookmark.title',bookmark.title);
             temp.querySelector('.title').innerText=bookmark.title;
 
             for (let j in bookmark.wvr_categories){
@@ -120,7 +119,6 @@ function updateContent(data) {
 
             temp.querySelector('.lat').innerText+=bookmark.lat;
             temp.querySelector('.lon').innerText+=bookmark.long;
-            //ToDo saving id instead of url?
              temp.querySelector('.addCategory').setAttribute('id',bookmark.url);
              temp.querySelector('.customCategories').setAttribute("id",bookmark.url);
              temp.querySelector('.creationDate').innerText=bookmark.CreationDate;
@@ -130,7 +128,6 @@ function updateContent(data) {
         }
 
     }
-    //toDo decide which function should be executed
     if ( document.getElementById("searchShortReview").innerText.length===0){
         searchShortReview();
     }
@@ -141,7 +138,6 @@ function updateContent(data) {
 
 }
 function filterBookmarks(){
-    console.log('filterBookmarks');
     let select=document.getElementById("filterBookmarks");
 
     let index=select.selectedIndex;
@@ -216,15 +212,14 @@ function searchShortReview() {
     let tr=tbody.getElementsByTagName('tr');
     let input=document.getElementById('searchShortReview');
     let filter=input.value.toUpperCase();
-    console.log('filter',filter)
-    //if index===0 no filter is selected
+
 
         for (let i in tr){
             try{
                 let td=tr[i].getElementsByTagName('td')[1];
                 if (td){
                     let txtValue=td.textContent||td.innerText;
-                    console.log('txtValue:',txtValue.toUpperCase())
+
                     if (txtValue.toUpperCase().indexOf(filter)>-1){
                         tr[i].style.display="";
                     } else {

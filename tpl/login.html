@@ -1,7 +1,7 @@
 {{define "login"}}
 {{template "head"}}
 {{template "registrationModal"}}
-<script src="registrationModal.js"></script>
+
 <div class="item3">
     <form method="post" action="drueckMich">
         <label>Benutzername:</label>
@@ -15,9 +15,9 @@
 
         <label>registrieren?</label>
         <input type="button" id="registrationButton" value="registrieren">
+    <script src="registrationModal.js"></script>
     {{if .ShowModal}}
        <script>
-           console.log('show RegistrationModal');
 
            registrationModal.style.display = "block";
        </script>

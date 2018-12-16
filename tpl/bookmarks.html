@@ -53,7 +53,7 @@
                 <th>URL</th>
                 <th>Kurzbeschreibung</th>
                 <th>
-                    <div class="tooltip" onclick="titleClick(event)">Title
+                    <div class="tooltip" onclick="sortAfterTitle(event)">Title
                         <span class="tooltiptext">Zum Sortieren klicken</span>
                     </div>
                 </th>
@@ -70,7 +70,7 @@
             {{range .Bookmarks}}
 
                 <tr>
-                    <td class="url"><a href={{.URL}} target="_blank">{{.URL}}</a></td>
+                    <td class="url"><a href={{.URL}} target="_blank">{{.Title}}</a></td>
                     <td class="shortReview">{{.ShortReview}}</td>
                     <td class="title">{{.Title}}</td>
                     <td class="icon">

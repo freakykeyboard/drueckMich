@@ -17,19 +17,19 @@ document.addEventListener('DOMContentLoaded',()=>{
        if (request.message==="sendHref"){
 
 
-           let url='http://localhost:4242/Url';
+
            let encodedeUrl=encodeURIComponent(request.href);
-           let jsonString=JSON.stringify({url:encodedeUrl});
+           console.log('encodedUrl',encodedeUrl)
+           let url='http://localhost:4242/Url?url='+encodedeUrl;
            let xhr=new XMLHttpRequest();
-           let formData=new FormData;
-           formData.append('href',jsonString);
-           xhr.open('POST',url);
+
+           xhr.open('GET',url);
            xhr.addEventListener("load",()=>{
 
               console.log(xhr.responseText)
            });
            xhr.setRequestHeader("Content-type", 'application/x-www-form-urlencoded');
-           xhr.send(formData);
+           xhr.send();
 
            // Neuen Tab mit urlNeuerTab öffnen. Falls diese Url bereits in einem Tab geöffnet ist,
            // diesen Tab aktivieren und neu laden:

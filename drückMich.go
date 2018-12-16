@@ -464,13 +464,17 @@ func getIconFromGrid(writer http.ResponseWriter, request *http.Request) {
 
 	if len(iconName) != 0 {
 		img, err := favIconsGridFs.Open(iconName)
-		check(err)
-		//by now no Content-Type  is saved in DB
-		writer.Header().Add("Content-Type", img.ContentType())
-		_, err = io.Copy(writer, img)
-		check_ResponseToHTTP(err, writer)
-		err = img.Close()
-		check_ResponseToHTTP(err, writer)
+
+		if err != nil {
+			http.Error(writer, err.Error(), http.StatusNotFound)
+		} else {
+
+			writer.Header().Add("Content-Type", img.ContentType())
+			_, err = io.Copy(writer, img)
+			check_ResponseToHTTP(err, writer)
+			err = img.Close()
+			check_ResponseToHTTP(err, writer)
+		}
 	}
 
 }
@@ -511,7 +515,6 @@ func getAndProcessPage() {
 	channelData := <-dataChannel
 	docSelector := channelData.Docselector
 	pageUrl := channelData.Url
-	fmt.Println("getAndProcessPage")
 
 	var imgUrls []*url.URL
 
@@ -543,8 +546,6 @@ func getAndProcessPage() {
 		attributes.imgSrcs = make(map[int]string)
 		attributes = getAllAttributes(docZeiger)
 
-		go getAndSaveFavicon(pageUrl, attributes.title)
-		fmt.Println("getAndSaveFavicon")
 		faviconUrl := "https://www.google.com/s2/favicons?domain=" + pageUrl
 		res, err := http.Get(faviconUrl)
 		if err != nil {
@@ -587,8 +588,7 @@ func getAndProcessPage() {
 
 			imgUrls = append(imgUrls, absURL)
 
-			docUpdate := bson.M{"$addToSet": bson.M{"images": absURL.String()},
-				"$set": bson.M{"keywords": attributes.keywords, "title": attributes.title, "icon": attributes.title, "shortReview": attributes.description}}
+			docUpdate := bson.M{"$addToSet": bson.M{"images": absURL.String()}}
 			err = bookmarkCollection.Update(docSelector, docUpdate)
 			check(err)
 

@@ -6,13 +6,16 @@ let registrationModal = document.getElementById('registrationModal');
 // Get the button that opens the modal
 let btn = document.getElementById("registrationButton");
 
-// Get the <span> element that closes the modal
+document.getElementById('registrate').addEventListener('click',()=>{
+    registrationModal.style.display = "none";
+
+});
 
 
 // When the user clicks the button, open the modal
 btn.onclick = function() {
     registrationModal.style.display = "block";
-}
+};
 
 
 

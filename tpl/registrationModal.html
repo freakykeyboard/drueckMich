@@ -1,7 +1,9 @@
 {{define "registrationModal"}}
+    <!-- abgeändertes Beispiel von w3school -->
     <!DOCTYPE html>
-    <html>
+    <html lang="de">
     <head>
+        <title>Registrieren</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="modal.css">
     </head>
@@ -17,12 +19,20 @@
             <div class="modal-body">
                 <form method="post" action="registrate">
                     <label>Benutzername:</label>
-                    <input type="text" name="username" required>
+                    <input type="text" name="username" required pattern="{3.}" title="mindestens 3 Zeichen" >
                     <br>
                     <label>Passwort:</label>
-                    <input type="password" name="password" required>
+                    <!--
+                    mindestens eine Ziffer(1. regulärer Ausdruck)
+                     mindestens eine Kleinbuchstabe(2. regulärer Ausdruck)
+                     mindestens ein Großbuchstabe(3. regulärer Ausdruck)
+                       mindestens ein Sonderzeichen
+                     mindestens 8 Zeichen(5. regülärer Audruck)
+                     -->
+                    <input type="password" name="password" required
+                           pattern="{3.}" title="mindestens 3 Zeichen">
                     <br>
-                    <input type="submit" value="registrate" name="submit">
+                    <input id="registrate" type="submit" value="registrate" name="submit">
                 </form>
                 <p>{{.Message}}</p>
             </div>

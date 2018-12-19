@@ -14,7 +14,7 @@ function addCategory(e) {
     addCategoryModal.style.display = "none";
 }
 function addCategoryToBookmark(e) {
-    console.log('addCategoryModal');
+
     console.log(e.target.previousSibling);
     id=e.target.getAttribute("id");
     console.log(id);
@@ -55,8 +55,8 @@ let addCategoryModal = document.getElementById('addCategoryModal');
 
 
 window.addEventListener('click',function(event) {
-    console.log(event.target==addCategoryModal);
-    if (event.target == addCategoryModal) {
+    console.log(event.target===addCategoryModal);
+    if (event.target === addCategoryModal) {
         addCategoryModal.style.display = "none";
     }
 },false);

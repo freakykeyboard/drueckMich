@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded',()=>{
    //browser action button handler
-   chrome.browserAction.onClicked.addListener((tab)=>{
+   chrome.browserAction.onClicked.addListener(()=>{
         chrome.tabs.query({
             active:true,
             currentWindow:true
@@ -16,10 +16,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    chrome.runtime.onMessage.addListener((request,sender,sendResponse)=>{
        if (request.message==="sendHref"){
 
-
-
            let encodedeUrl=encodeURIComponent(request.href);
-           console.log('encodedUrl',encodedeUrl)
            let url='http://localhost:4242/Url?url='+encodedeUrl;
            let xhr=new XMLHttpRequest();
 

@@ -1,4 +1,4 @@
-    {{define "bookmarks"}}
+{{define "bookmarks"}}
     {{template "head"}}
 
     <div class="item2">
@@ -11,25 +11,26 @@
         </fieldset>
         <div class="Column">
             <form action="deleteAccount">
-            <input type="submit" value="deleteUser" >
+                <input type="submit" value="deleteUser">
             </form>
         </div>
         <div class="Column">
             <form method="post" action="geospatial" id="geospatial">
 
-                <input type="text" name="longitude"  placeholder="Longitude">
-                <input type="text" name="latitude"  placeholder="Latitude" >
+                <input type="text" name="longitude" placeholder="Longitude">
+                <input type="text" name="latitude" placeholder="Latitude">
 
                 <input type="submit" onclick="geospatial(event)">
             </form>
 
         </div>
         <div class="Column">
-                <input type="text" placeholder="suche In Kurzbeschreibung" id="searchShortReview" oninput="searchShortReview(event)" >
+            <input type="text" placeholder="suche In Kurzbeschreibung" id="searchShortReview"
+                   oninput="searchShortReview(event)">
         </div>
         <div class="Column">
             <form action="logout">
-            <input type="submit" value="logout">
+                <input type="submit" value="logout">
             </form>
         </div>
         <div class="Column">
@@ -60,10 +61,14 @@
                 <th>Icon/Logo</th>
                 <th>WVR-Kategorien</th>
                 <th>Kategorien</th>
-                <th>Latitude</th>
-                <th><div class="tooltip" onclick="sortAfterTime(event)">Erstelldatum
+                <th>
+                    <div class="tooltip">Latitude</div>
+                </th>
+                <th>
+                    <div class="tooltip" onclick="sortAfterTime(event)">Erstelldatum
                         <span class="tooltiptext">Zum Sortieren nach Erstelldatum klicken</span>
-                    </div></th>
+                    </div>
+                </th>
             </tr>
             </thead>
             <tbody id="tbody">
@@ -78,14 +83,15 @@
                     </td>
                     <td>
                         <ul class="wvrCategories">
-                        {{range .WVRCategories}}
-                            <li>{{.}}</li>
-                        {{end}}
+                            {{range .WVRCategories}}
+                                <li>{{.}}</li>
+                            {{end}}
                         </ul>
                     </td>
                     <td>
-                        <img id={{.URL}} class="addCategory" onclick="addCategoryToBookmark(event)" src="plusIcon.png?">
-                       <!-- <img id={{.URL}} class="removeCategory" onclick="openRemoveCategoryModal(event)" src="minus.png?">-->
+                        <img alt="not found" id={{.URL}} class="addCategory" onclick="addCategoryToBookmark(event)"
+                             src="plusIcon.png?">
+                        <!-- <img id={{.URL}} class="removeCategory" onclick="openRemoveCategoryModal(event)" src="minus.png?">-->
                         <ul class="customCategories" id="catList">
                             {{range .CustomCategories}}
                                 <li onclick="openRemoveCategoryModal(event)">{{.}}</li>
@@ -104,10 +110,10 @@
             </tbody>
         </table>
     </div>
-        <template id="selectCategory">
-            <option class="category">
-            </option>
-        </template>
+    <template id="selectCategory">
+        <option class="category">
+        </option>
+    </template>
     <template id="bookmarkRow">
         <tr>
             <td class="url"></td>
@@ -119,9 +125,9 @@
                 <ul class="wvrCategories">
                 </ul>
             </td>
-            <td><img class="addCategory" onclick="addCategoryToBookmark(event)"  src="plusIcon.png?">
-               <!-- <img class="removeCategory" onclick="openRemoveCategoryModal(event)" src="minus.png?">-->
-                <ul onclick="openRemoveCategoryModal(event)" class="customCategories" ></ul>
+            <td><img alt="not found" class="addCategory" onclick="addCategoryToBookmark(event)" src="plusIcon.png?">
+                <!-- <img class="removeCategory" onclick="openRemoveCategoryModal(event)" src="minus.png?">-->
+                <ul onclick="openRemoveCategoryModal(event)" class="customCategories"></ul>
             </td>
             <td class="coordinates"><p class="lat">Latitude: </p>,<p class="lon">Longitude </p></td>
             <td class="creationDate"></td>
@@ -132,9 +138,9 @@
 
     {{template "newCategoryModal"}}
     <script src="newCategoryModal.js"></script>
-        {{template "addCategoryModal"}}
+    {{template "addCategoryModal"}}
     <script src="addCategoryModal.js"></script>
-        {{template "removeCategoryModal"}}
+    {{template "removeCategoryModal"}}
     <script src="removeCategoryModal.js"></script>
 
     {{template "end"}}
